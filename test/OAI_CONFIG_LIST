@@ -1,0 +1,8 @@
+[
+
+    {
+        "api_type": "ollama",
+        "model": "llama3.1:70b",
+        "client_host": "http://0.0.0.0:11434"
+    }
+]
