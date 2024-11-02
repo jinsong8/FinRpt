@@ -1,3 +1,12 @@
+dataset/*
+*.ttf
+*.txt
+figs/
+prompt/
+*reports*/
+*.db
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
