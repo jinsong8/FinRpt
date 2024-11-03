@@ -77,7 +77,7 @@ if __name__ == '__main__':
     # finrpt.run(date='2024-10-28', stock_code='600029.SZ')
     # finrpt.run(date='2024-10-28', stock_code='600941.SS')
     # finrpt.run(date='2024-10-28', stock_code='000538.SZ')
-    finrpt.run(date='2024-10-28', stock_code='300750.SZ')
+    finrpt.run(date='2024-10-30', stock_code='300750.SZ')
     
         
         
