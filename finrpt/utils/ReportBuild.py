@@ -496,7 +496,7 @@ def build_report(
     raw_height = img.imageHeight
     img.drawWidth = 170
     img.drawHeight = img.drawWidth * (raw_height / raw_width)
-    img.drawOn(c, A4[0] - 205, A4[1] - 755)
+    img.drawOn(c, A4[0] - 202, A4[1] - 755)
     
     c.save()
 
