@@ -7,7 +7,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib import  colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import Paragraph, Frame, Flowable
-from finrpt.utils.charting import get_share_performance, get_pe_eps_performance
+from finrpt.utils.charting import get_share_performance, get_pe_eps_performance, get_revenue_performance
 import pandas as pd
 from datetime import timedelta, datetime
 import yfinance as yf
@@ -318,8 +318,10 @@ def build_report(
 ):
     get_share_performance(res_data, res_data['stock_code'], date)
     get_pe_eps_performance(res_data, res_data['stock_code'], date)
+    get_revenue_performance(res_data, res_data['stock_code'], date)
     share_performance_image_path="./figs/share_performance.png"
     pe_eps_performance_image_path="./figs/pe_eps.png"
+    revenue_performance_image_path="./figs/revenue_performance.png"
     
     pdfmetrics.registerFont(TTFont('微软雅黑', 'msyh.ttf'))
     styles = getSampleStyleSheet()
@@ -485,6 +487,17 @@ def build_report(
     img.drawWidth = 170
     img.drawHeight = img.drawWidth * (raw_height / raw_width)
     img.drawOn(c, A4[0] - 205, A4[1] - 620)
+    
+    frame_title6 = draw_frame_title("单季营业收入及增速", color1, 177, '微软雅黑')
+    frame_title6.wrap(0, 0)
+    frame_title6.drawOn(c, A4[0] - 206, A4[1] - 645)
+    img = Image(revenue_performance_image_path)
+    raw_width = img.imageWidth
+    raw_height = img.imageHeight
+    img.drawWidth = 170
+    img.drawHeight = img.drawWidth * (raw_height / raw_width)
+    img.drawOn(c, A4[0] - 205, A4[1] - 755)
+    
     c.save()
 
     
@@ -492,5 +505,5 @@ if __name__ == "__main__":
     date = '2024-10-28'
     data = pickle.load(open('maotai_1028_gpt4o.pkl', 'rb'))
     data['report_title'] = "业绩增长韧性延续，全年目标完成在望"
-    build_report(data, date)
+    build_report(data, date) 
     

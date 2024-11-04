@@ -7,6 +7,7 @@ from typing import Annotated, List, Tuple
 from pandas import DateOffset
 from datetime import datetime, timedelta
 from matplotlib.font_manager import FontProperties
+from matplotlib.ticker import FuncFormatter
 import yfinance as yf
 import numpy as np
 import pdb
@@ -16,8 +17,7 @@ def get_share_performance(
     data,
     stock_code,
     filing_date,
-    save_path='./figs',
-) -> str:
+    save_path='./figs'):
     plt.rcParams['font.family'] = 'SimSun' 
     
     if isinstance(filing_date, str):
@@ -80,8 +80,7 @@ def get_pe_eps_performance(
     stock_code,
     filing_date,
     years=4,
-    save_path='./figs',
-) -> str:
+    save_path='./figs'):
     plt.rcParams['font.family'] = 'SimSun'
     
     if isinstance(filing_date, str):
@@ -142,6 +141,46 @@ def get_pe_eps_performance(
     plt.savefig(plot_path)
     plt.close()
     
+
+def get_revenue_performance(
+    res_data,
+    stock_code,
+    filing_date,
+    save_path='./figs'):
+    data = res_data['financials']['stock_income'].loc['Operating Income'][:4]
+    revenue = data[::-1]
+    revenue = revenue // 1e8
+    yoy = (revenue - revenue.iloc[0]) / revenue.iloc[0] * 100
+    quarters = revenue.index
+
+    plt.rcParams['font.family'] = 'SimSun' 
+
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+
+    ax1.bar(quarters, revenue, color='#9E1F00', label='营业收入（亿元）', width=15)
+    ax1.set_xticks(quarters)
+    # ax1.set_xticklabels(quarters, rotation=45)
+    ax1.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%Y-%m'))
+    ax1.tick_params(axis='y', labelcolor='#6a6a6a', labelsize=21, width=3, length=5, direction='in')
+    ax1.tick_params(axis='x', colors='#6a6a6a', labelsize=21)
+    ax1.spines['top'].set_visible(False)
+
+    ax2 = ax1.twinx()
+    ax2.plot(quarters, yoy, color='#d45716', label='yoy')
+    ax2.tick_params(axis='y', labelcolor='#6a6a6a', labelsize=21, width=3, length=5, direction='in')
+    ax2.yaxis.set_major_formatter(FuncFormatter(lambda y, _: f'{int(y)}%'))
+    ax2.spines['top'].set_visible(False)
+
+    ax1.legend(loc='upper center', bbox_to_anchor=(0.3, -0.1), ncol=2, fontsize=22, handlelength=5, frameon=False, labelcolor='#6a6a6a')
+    ax2.legend(loc='upper center', bbox_to_anchor=(0.75, -0.1), ncol=2, fontsize=22, handlelength=5, frameon=False, labelcolor='#6a6a6a')
+
+    plt.tight_layout()
+    plot_path = (
+    f"{save_path}/revenue_performance.png"
+    if os.path.isdir(save_path)
+    else save_path)
+    plt.savefig(plot_path)
+    plt.close()
     
 
 
@@ -150,5 +189,4 @@ if __name__ == "__main__":
     data = {
         "company_name": "贵州茅台"
     }
-    get_share_performance(data, '600519.SS', filing_date=date)
-    get_pe_eps_performance(data, '600519.SS', filing_date=date)
+    get_revenue_preformanace(data, '600519.SS', date)

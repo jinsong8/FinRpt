@@ -1,45 +1,37 @@
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
-import matplotlib.ticker as ticker
+from matplotlib.ticker import FuncFormatter
+import yfinance as yf
 import pdb
 
-plt.rcParams['font.family'] = 'SimSun'
+data = yf.Ticker('300750.SZ').quarterly_income_stmt.loc['Operating Income'][:4]
+revenue = data[::-1]
+revenue = revenue // 1e8
+yoy = (revenue - revenue.iloc[0]) / revenue.iloc[0] * 100
+quarters = revenue.index
 
-dates = pd.date_range(start='2023-09-01', end='2024-09-01', freq='D')
+plt.rcParams['font.family'] = 'SimSun' 
 
-np.random.seed(0)
-data_biyadi = np.cumsum(np.random.randn(len(dates)) * 0.5)
-data_hushen300 = np.cumsum(np.random.randn(len(dates)) * 0.5)
+fig, ax1 = plt.subplots(figsize=(10, 6))
 
-df = pd.DataFrame({'Date': dates, '比亚迪': data_biyadi, '沪深300': data_hushen300})
-df.set_index('Date', inplace=True)
+ax1.bar(quarters, revenue, color='#9E1F00', label='营业收入（亿元）', width=15)
+ax1.set_xticks(quarters)
+# ax1.set_xticklabels(quarters, rotation=45)
+ax1.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%Y-%m'))
+ax1.tick_params(axis='y', labelcolor='#6a6a6a', labelsize=21, width=3, length=5, direction='in')
+ax1.tick_params(axis='x', colors='#6a6a6a', labelsize=21)
+ax1.spines['top'].set_visible(False)
 
-plt.figure(figsize=(10, 6))
-plt.plot(df.index, df['比亚迪'], label='比亚迪', color='#9E1F00', linewidth=4)
-plt.plot(df.index, df['沪深300'], label='沪深300', color='#d45716', linewidth=4)
+ax2 = ax1.twinx()
+ax2.plot(quarters, yoy, color='#d45716', label='yoy')
+ax2.tick_params(axis='y', labelcolor='#6a6a6a', labelsize=21, width=3, length=5, direction='in')
+ax2.yaxis.set_major_formatter(FuncFormatter(lambda y, _: f'{int(y)}%'))
+ax2.spines['top'].set_visible(False)
 
-
-# plt.legend(loc='lower center', ncol=2, frameon=False, fontsize=12)
-plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), ncol=2, fontsize=18, handlelength=5, frameon=False, labelcolor='#6a6a6a')
-
-plt.gca().xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%Y-%m'))
-plt.gca().yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y:.0f}%'))
-
-plt.grid(visible=False)
-
-ax = plt.gca()
-ax.set_xlim(df.index.min(), df.index.max()) 
-ax.spines['left'].set_linewidth(3)
-ax.spines['bottom'].set_linewidth(3)
-ax.spines['bottom'].set_color('#6a6a6a')
-ax.spines['left'].set_color('#6a6a6a')
-ax.spines['top'].set_color('none')
-ax.spines['right'].set_color('none')
-
-ax.tick_params(axis='x', colors='#6a6a6a', labelsize=17, width=3, length=5)
-ax.tick_params(axis='y', colors='#6a6a6a', labelsize=17, width=3, length=5)
+ax1.legend(loc='upper center', bbox_to_anchor=(0.3, -0.1), ncol=2, fontsize=22, handlelength=5, frameon=False, labelcolor='#6a6a6a')
+ax2.legend(loc='upper center', bbox_to_anchor=(0.75, -0.1), ncol=2, fontsize=22, handlelength=5, frameon=False, labelcolor='#6a6a6a')
 
 plt.tight_layout()
 plt.show()
-plt.savefig('./test.png')
+
+plt.savefig('test.png')

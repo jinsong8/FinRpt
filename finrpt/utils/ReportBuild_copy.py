@@ -17,7 +17,7 @@ from reportlab.platypus import (
 from reportlab.lib.units import inch
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_JUSTIFY, TA_LEFT, TA_CENTER
-from finrpt.utils.charting import get_share_performance, get_pe_eps_performance
+from finrpt.utils.charting import get_share_performance, get_pe_eps_performance, get_revenue_preformanace
 import pickle
 import pdb
 
