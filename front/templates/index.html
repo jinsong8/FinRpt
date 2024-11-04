@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinRpt</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            overflow-x: hidden; /* 防止水平滚动 */
+        }
+        input, button {
+            margin: 10px;
+            padding: 5px;
+        }
+        #pdf-viewer {
+            width: 80%;
+            height: 1200px;
+            border: 1px solid #ccc;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>FinRpt: automated stock research report generation agent</h1>
+    <input type="text" id="stock-code" placeholder="Stock Code", value="300750.SZ">
+    <input type="date" id="date", value="2024-10-27">
+    <button onclick="generatePDF()">Generate</button>
+    <p>Balance: <span id="count">0</span></p>
+    <div id="loading" style="display: none;">Generating PDF, please wait...</div>
+    <div id="pdf-container"></div>
+
+    <script>
+        function generatePDF() {
+            var stockCode = $('#stock-code').val();
+            var date = $('#date').val();
+            $('#loading').show();
+            $('button').prop('disabled', true);
+
+            $.post('/generate_pdf', {stock_code: stockCode, date: date}, function(data) {
+                $('#loading').hide(); 
+                $('#pdf-container').html('<iframe id="pdf-viewer" src="/' + data.pdf_file + '"></iframe>');
+                $('#count').text(data.count);
+                $('button').prop('disabled', false);
+                $.get('/get_count', function(data) {
+                    $('#count').text(data.count);});
+            }).fail(function(jqXHR) {
+                $('#loading').hide(); 
+                $('button').prop('disabled', false);
+                let errorMessage = "Failed to generate PDF. Please try again.";
+                if (jqXHR.responseJSON && jqXHR.responseJSON.error) {
+                    errorMessage = jqXHR.responseJSON.error;
+                }
+                alert(errorMessage);
+            });
+        }
+
+        $(document).ready(function() {
+            $.get('/get_count', function(data) {
+                $('#count').text(data.count);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -323,12 +323,15 @@ def build_report(
     pe_eps_performance_image_path="./figs/pe_eps.png"
     revenue_performance_image_path="./figs/revenue_performance.png"
     
+    company_name = res_data['company_name']
+    stock_code = res_data['stock_code']
+    
     pdfmetrics.registerFont(TTFont('微软雅黑', 'msyh.ttf'))
     styles = getSampleStyleSheet()
     color1 = Color(red=158 / 255.0,green=31 / 255.0,blue=0)
 
     filename = (
-            os.path.join(save_path, f"{res_data['company_name']}_研究报告_{date}_{res_data['model_name']}.pdf")
+            os.path.join(save_path, f"{stock_code}_{date}_{res_data['model_name']}.pdf")
             if os.path.isdir(save_path)
             else save_path
         )
@@ -340,9 +343,6 @@ def build_report(
     img.drawHeight = 40
     img.drawWidth = img.drawHeight * (raw_width / raw_height)
     img.drawOn(c, 40, A4[1] - 70)
-    
-    company_name = res_data['company_name']
-    stock_code = res_data['stock_code']
     
     c.setStrokeColor(colors.black)
     c.setFont("微软雅黑", 12)

@@ -44,7 +44,7 @@ class RiskAssessor(BaseModel):
             "股票近期总结信息:\n" + advisor_prompt + "\n\n" + \
             "股票半年报或年报:\n" + report_prompt + "\n\n" + \
             self.system_prompt
-        with open('./prompt/risk_prompt.txt', 'w') as f:
+        with open('prompt/risk_prompt.txt', 'w') as f:
             f.write(advisor_prompt)
             
         response = self.model.simple_prompt(advisor_prompt)

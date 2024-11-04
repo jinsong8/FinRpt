@@ -14,7 +14,7 @@ from finrpt.utils.ReportBuild import build_report
 import pdb
 
 class FinRpt:
-    def __init__(self, model_name="gpt-4o", max_rounds=3, language='zh', database_name='/data/jinsong/FinRpt/finrpt/source/cache.db'):
+    def __init__(self, model_name="gpt-4o", max_rounds=3, language='zh', database_name='/data/jinsong/FinRpt/finrpt/source/cache.db', save_path='./reports'):
         self.advisor = Advisor(model_name=model_name, max_rounds=max_rounds, language=language)
         self.financials_analyzer = FinancialsAnalyzer(model_name=model_name, max_rounds=max_rounds, language=language)
         self.news_analyzer = NewsAnalyzer(model_name=model_name, max_rounds=max_rounds, language=language)
@@ -22,6 +22,7 @@ class FinRpt:
         self.risk_assessor = RiskAssessor(model_name=model_name, max_rounds=max_rounds, language=language)
         self.dataer = Dataer(database_name=database_name)
         self.model_name = model_name
+        self.save_path = save_path
         
     def run(self, date, stock_code=None, company_name=None):
         assert (stock_code is not None) or (company_name is not None), 'stock_code or company_name must be provided'
@@ -52,7 +53,7 @@ class FinRpt:
         data['analyze_advisor'] = self.advisor.run(data)
         data['analyze_risk'] = self.risk_assessor.run(data)
         data['report_title'] = data["company_info"]["company_name"] + "研报（" + date + "）"
-        build_report(data, date)
+        build_report(data, date, self.save_path)
         
     def post_process_news(self, news):
         news, short_ratio = short_eliminate(news)

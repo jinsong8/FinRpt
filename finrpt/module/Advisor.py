@@ -83,7 +83,7 @@ class Advisor(BaseModel):
                  "关键新闻:\n" + news_prompt + "\n\n" + \
                  "股票半年报或年报:\n" + report_prompt + "\n\n" + \
                   self.system_prompt
-        with open('./prompt/advisor_prompt.txt', 'w') as f:
+        with open('prompt/advisor_prompt.txt', 'w') as f:
             f.write(advisor_prompt)
         response = self.model.simple_prompt(advisor_prompt)
         print(response)
