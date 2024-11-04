@@ -14,7 +14,7 @@ from finrpt.utils.ReportBuild import build_report
 import pdb
 
 class FinRpt:
-    def __init__(self, model_name="gpt-4o", max_rounds=3, language='zh', database_name='/home/jinsong/FinRpt/finrpt/source/cache.db'):
+    def __init__(self, model_name="gpt-4o", max_rounds=3, language='zh', database_name='/data/jinsong/FinRpt/finrpt/source/cache.db'):
         self.advisor = Advisor(model_name=model_name, max_rounds=max_rounds, language=language)
         self.financials_analyzer = FinancialsAnalyzer(model_name=model_name, max_rounds=max_rounds, language=language)
         self.news_analyzer = NewsAnalyzer(model_name=model_name, max_rounds=max_rounds, language=language)
