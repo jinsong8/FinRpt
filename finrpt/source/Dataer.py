@@ -200,7 +200,7 @@ class Dataer:
                         content = dict(zip(COMPANY_REPORT_TABLE_COLUMNS, query_result))
                         return content
                     else:
-                        return None # for report generate
+                        # return None # for report generate
                         content = _get_report_content(art_code=art_code)
                     break_flag = True
                     break
