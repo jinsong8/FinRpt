@@ -21,9 +21,9 @@ def generate_pdf():
     try:
         stock_code = request.form['stock_code']
         date = request.form['date']
-        model_name = "gpt-4o"
+        model_name = request.form['model']
         finrpt = FinRpt(model_name=model_name, save_path='./temp')
-        temp_file = f"temp/{stock_code}_{date}_{model_name}.pdf"
+        temp_file = f"temp/{stock_code}_{date}_{model_name}/{stock_code}_{date}_{model_name}.pdf"
         finrpt.run(date=date, stock_code=stock_code)
         return jsonify({'pdf_file': temp_file, 'count': generation_count})
     except Exception as e:
@@ -41,7 +41,7 @@ def get_count():
         'accept': 'application/json, text/plain, */*',
         'accept-encoding': 'gzip, deflate, br, zstd',
         'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        'cookie': 'session=MTczMDcwNzM5NnxEWDhFQVFMX2dBQUJFQUVRQUFCdl80QUFCQVp6ZEhKcGJtY01CQUFDYVdRRGFXNTBCQUlBSkFaemRISnBibWNNQ2dBSWRYTmxjbTVoYldVR2MzUnlhVzVuREFvQUNHcHBibk52Ym1jNEJuTjBjbWx1Wnd3R0FBUnliMnhsQTJsdWRBUUNBQUlHYzNSeWFXNW5EQWdBQm5OMFlYUjFjd05wYm5RRUFnQUN83KQ2X4Y1ssY7CQE7VGuJQE4O8d-t1VbTPTsZmnfNTdM=',
+        'cookie': 'session=MTczMjYzNTkwNnxEWDhFQVFMX2dBQUJFQUVRQUFEX2pmLUFBQVVHYzNSeWFXNW5EQW9BQ0hWelpYSnVZVzFsQm5OMGNtbHVad3dLQUFocWFXNXpiMjVuT0FaemRISnBibWNNQmdBRWNtOXNaUU5wYm5RRUFnQUNCbk4wY21sdVp3d0lBQVp6ZEdGMGRYTURhVzUwQkFJQUFnWnpkSEpwYm1jTUJ3QUZaM0p2ZFhBR2MzUnlhVzVuREFVQUEzWnBjQVp6ZEhKcGJtY01CQUFDYVdRRGFXNTBCQUlBSkE9PXyQQwQIsjzk8UoPyjNt6A1V4b1z-mzsD3I2Cbbn3jz2Ew==',
         'new-api-user': '18',
         'referer': 'https://api.gptacg.top/token',
         'sec-ch-ua': '"Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"',
@@ -60,6 +60,21 @@ def get_count():
 @app.route('/temp/<path:filename>')
 def download_file(filename):
     return send_from_directory('./temp', filename)
+
+@app.route('/get_logs')
+def get_logs():
+    log_file_path = request.args.get('path')
+    log_file_path = log_file_path + '_gpt-4o'
+    log_file_path = os.path.join('./temp', log_file_path, 'finrpt.log')
+    print(log_file_path)
+    try:
+        with open(log_file_path, 'r') as f:
+            logs = f.readlines()
+        return {'log': logs[-1]}  # 返回最新一条日志
+    except FileNotFoundError:
+        return {'error': 'Log file not found'}, 404
+    except Exception as e:
+        return {'error': str(e)}, 500
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,7 +1,7 @@
 import sqlite3
 
 COMPANY_INFO_TABLE_COLUMNS = ['stock_code', 'company_name', 'company_full_name', 'company_name_en', 'stock_category', 'industry_category', 'stock_exchange', 'industry_cs', 'general_manager', 'legal_representative', 'board_secretary', 'chairman', 'securities_representative', 'independent_directors', 'website', 'address', 'registered_capital', 'employees_number', 'management_number', 'company_profile', 'business_scope']
-COMPANY_REPORT_TABLE_COLUMNS = ["report_id", "content", "stock_code", "date", "title"]
+COMPANY_REPORT_TABLE_COLUMNS = ["report_id", "content", "stock_code", "date", "title", 'core_content', 'summary']
 
 
 def company_info_table_init(db):
@@ -45,7 +45,9 @@ def company_report_table_init(db):
         content TEXT,
         stock_code TEXT,
         date TEXT,
-        title TEXT
+        title TEXT,
+        core_content TEXT,
+        summary TEXT
     )
     ''')
     conn.commit()
@@ -64,7 +66,10 @@ def company_news_table_init(db):
         news_author TEXT,
         news_time TEXT,
         stock_code TEXT,
-        news_content TEXT
+        news_content TEXT,
+        news_summary TEXT,
+        dec_response TEXT,
+        news_decision TEXT
     )
     ''')
     conn.commit()

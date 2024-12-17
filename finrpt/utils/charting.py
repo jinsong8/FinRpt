@@ -147,26 +147,31 @@ def get_revenue_performance(
     stock_code,
     filing_date,
     save_path='./figs'):
-    data = res_data['financials']['stock_income'].loc['Operating Income'][:4]
+    data = res_data['financials']['stock_income']['营业总收入']
     revenue = data[::-1]
     revenue = revenue // 1e8
     yoy = (revenue - revenue.iloc[0]) / revenue.iloc[0] * 100
-    quarters = revenue.index
-
+    quarters = res_data['financials']['stock_income']['日期'][::-1]
+    new_quarters = []
+    for i, quarter in enumerate(quarters):
+        new_quarter = quarter[:4] + '-' + quarter[4:6] 
+        new_quarters.append(new_quarter)
+    quarters = new_quarters
+    
     plt.rcParams['font.family'] = 'SimSun' 
 
     fig, ax1 = plt.subplots(figsize=(10, 6))
-
-    ax1.bar(quarters, revenue, color='#9E1F00', label='营业收入（亿元）', width=15)
+ 
+    ax1.bar(list(quarters)[-4:], list(revenue)[-4:], color='#9E1F00', label='营业收入（亿元）', width=0.2)
     ax1.set_xticks(quarters)
     # ax1.set_xticklabels(quarters, rotation=45)
-    ax1.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%Y-%m'))
+    # ax1.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%Y-%m'))
     ax1.tick_params(axis='y', labelcolor='#6a6a6a', labelsize=21, width=3, length=5, direction='in')
     ax1.tick_params(axis='x', colors='#6a6a6a', labelsize=21)
     ax1.spines['top'].set_visible(False)
 
     ax2 = ax1.twinx()
-    ax2.plot(quarters, yoy, color='#d45716', label='yoy')
+    ax2.plot(list(quarters)[-4:], list(yoy)[-4:], color='#d45716', label='yoy')
     ax2.tick_params(axis='y', labelcolor='#6a6a6a', labelsize=21, width=3, length=5, direction='in')
     ax2.yaxis.set_major_formatter(FuncFormatter(lambda y, _: f'{int(y)}%'))
     ax2.spines['top'].set_visible(False)

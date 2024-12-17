@@ -1,6 +1,7 @@
 import os
 import dotenv
 from openai import OpenAI, AzureOpenAI
+from finrpt.utils.data_processing import robust_load_json
 import pdb
 
 
@@ -115,20 +116,21 @@ class OpenAIBaseModel():
 
     @staticmethod
     def read_openai_env_vars(model_name):
-        if 'llama' in model_name:
-            return {
-                "api_version": os.getenv("OPENAI_API_VERSION"),
-                "api_base": os.getenv("OPENAI_API_URL_LOCAL"),
-                "api_key": os.getenv("OPENAI_API_KEY"),
-                "model": os.getenv("OPENAI_MODEL"),
-            }
-        else:
+        if 'gpt' in model_name:
             return {
                 "api_version": os.getenv("OPENAI_API_VERSION"),
                 "api_base": os.getenv("OPENAI_API_URL"),
                 "api_key": os.getenv("OPENAI_API_KEY"),
                 "model": os.getenv("OPENAI_MODEL"),
             }
+        else:
+            return {
+                "api_version": os.getenv("OPENAI_API_VERSION"),
+                "api_base": os.getenv("OPENAI_API_URL_LOCAL"),
+                "api_key": os.getenv("OPENAI_API_KEY"),
+                "model": os.getenv("OPENAI_MODEL"),
+            }
+            
 
 
 class OpenAIModel(OpenAIBaseModel):
@@ -144,6 +146,7 @@ class OpenAIModel(OpenAIBaseModel):
         top_p=0.95,
         frequency_penalty=0,
         presence_penalty=0,
+        max_rounds=3
     ):
         super().__init__(
             api_type=api_type,
@@ -157,6 +160,7 @@ class OpenAIModel(OpenAIBaseModel):
             frequency_penalty=frequency_penalty,
             presence_penalty=presence_penalty,
         )
+        self.max_rounds = max_rounds
     
     def summarize_response(self, response):
         """Returns the first reply from the "assistant", if available"""
@@ -215,6 +219,25 @@ class OpenAIModel(OpenAIBaseModel):
 
         """
         return self.prompt([{"role": "user", "content": input_text}])
+    
+    def json_prompt(self, input_text: str):
+        for i in range(self.max_rounds):
+            try:
+                response = self.simple_prompt(input_text)
+                response_json = robust_load_json(response[0])
+                break
+            except Exception as e:
+                print("Error occurred during round {}".format(i+1), e)
+        return response, response_json
+    
+    def robust_prompt(self, input_text: str):
+        for i in range(self.max_rounds):
+            try:
+                response = self.simple_prompt(input_text)
+                break
+            except Exception as e:
+                print("Error occurred during round {}".format(i+1), e)
+        return response
     
 
 if __name__ == '__main__':

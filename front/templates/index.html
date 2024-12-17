@@ -19,7 +19,7 @@
             text-align: center;
             overflow-x: hidden; /* 防止水平滚动 */
         }
-        input, button {
+        input, button, select {
             margin: 10px;
             padding: 5px;
         }
@@ -29,25 +29,48 @@
             border: 1px solid #ccc;
             margin-top: 20px;
         }
+        /* #log-container {
+            text-align: left;
+            height: 200px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 20px;
+        } */
     </style>
 </head>
 <body>
     <h1>FinRpt: automated stock research report generation agent</h1>
     <input type="text" id="stock-code" placeholder="Stock Code", value="300750.SZ">
-    <input type="date" id="date", value="2024-10-27">
+    <input type="date" id="date", value="2024-11-05">
+    <select id="model-selection">
+        <option value="gpt-4o">gpt-4o</option>
+        <option value="llama3.1:70b">llama3.1:70b</option>
+        <option value="llama3.1:latest">llama3.1:latest</option>
+        <option value="llama3.2:latest">llama3.2:latest</option>
+        <option value="mixtral:8x7b">mixtral:8x7b</option>
+        <option value="llama-xy-8q:13b">llama-xy-8q:13b</option>
+        <option value="llama-xy-4q:13b">llama-xy-4q:13b</option>
+        <option value="llama-xy:13b">llama-xy:13b</option>
+        <option value="llama3.1:8b-instruct-fp16">llama3.1:8b-instruct-fp16</option>
+        <option value="llama3.1:8b-text-fp16">llama3.1:8b-text-fp16</option>
+        <option value="qwen2.5:7b-instruct-fp16">qwen2.5:7b-instruct-fp16</option>
+    </select>
     <button onclick="generatePDF()">Generate</button>
     <p>Balance: <span id="count">0</span></p>
     <div id="loading" style="display: none;">Generating PDF, please wait...</div>
     <div id="pdf-container"></div>
+    <!-- <div id="log-container"></div> -->
 
     <script>
         function generatePDF() {
             var stockCode = $('#stock-code').val();
             var date = $('#date').val();
+            var model = $('#model-selection').val();
             $('#loading').show();
             $('button').prop('disabled', true);
 
-            $.post('/generate_pdf', {stock_code: stockCode, date: date}, function(data) {
+            $.post('/generate_pdf', {stock_code: stockCode, date: date, model: model}, function(data) {
                 $('#loading').hide(); 
                 $('#pdf-container').html('<iframe id="pdf-viewer" src="/' + data.pdf_file + '"></iframe>');
                 $('#count').text(data.count);
@@ -70,6 +93,28 @@
                 $('#count').text(data.count);
             });
         });
+
+        // function fetchLogs() {
+        //     var stockCode = $('#stock-code').val();
+        //     var date = $('#date').val();
+        //     var logFilePath = `${stockCode}_${date}`;  // 合成日志文件路径
+
+        //     $.get('/get_logs', { path: logFilePath }, function(data) {
+        //         if (data.error) {
+        //             console.error(data.error);
+        //         } else {
+        //             const logContainer = $('#log-container');
+        //             const lastLog = logContainer.children().last().text();
+        //             const newLog = data.log;
+        //             if (lastLog !== newLog) {
+        //                 logContainer.append('<div>' + newLog + '</div>');
+        //                 logContainer.scrollTop(logContainer[0].scrollHeight);
+        //             }
+        //         }
+        //     });
+        // }
+
+        // setInterval(fetchLogs, 100);
     </script>
 </body>
 </html>

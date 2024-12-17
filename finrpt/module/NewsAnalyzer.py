@@ -1,4 +1,6 @@
 from finrpt.module.Base import BaseModel
+from finrpt.utils.data_processing import robust_load_json
+import logging
 import pdb
 import re
 import json
@@ -29,35 +31,10 @@ SYSTEM_PROPMT_ENGLISH = """You are an expert financial analyst specializing in d
     }
   ]
 }
-
 """
 
-SYSTEM_PROPMT_CHINESE = """您是一位专注于发现影响股市趋势的关键新闻的专家金融分析师。我为您提供以上公司名称和相关新闻文章。您的任务是识别并总结可能影响公司股价的十条最重要的新闻。请关注财务表现、市场状况、监管变化、领导层变动以及其他相关信息。请将您的分析限制在十条最重要的新闻上,使用不超过3000个字。为了更好地阅读,请将您的输出格式化为JSON:
-
-{
-  "key_news": [
-    {
-      "news_id": "该新闻在输入新闻中的序号",
-      "news_title": "标题",
-      "summary": "新闻重述，需要包括新闻的主要内容",
-      "potential_impact": "正面/负面/中性"
-    },
-    {
-      "news_id": "该新闻在输入新闻中的序号",  
-      "news_title": "标题",
-      "summary": "新闻重述，需要包括新闻的主要内容",
-      "potential_impact": "正面/负面/中性"
-    },
-    ...
-    {
-      "news_id": "该新闻在输入新闻中的序号",
-      "news_title": "标题",
-      "summary": "新闻重述，需要包括新闻的主要内容",
-      "potential_impact": "正面/负面/中性"
-    }
-  ]
-}
-
+SYSTEM_PROPMT_CHINESE = """您是一位专注于发现影响股市趋势的关键新闻的专家金融分析师。我为您提供以上公司名称和相关新闻文章。您的任务是根据新闻对公司股票价格影响的可能性将新闻排序，选择最多十条最可能影响公司股价的重要的新闻。请关注财务表现、市场状况、监管变化、领导层变动以及其他相关信息。请将您的输出限制在最多十条最重要的新闻上,使用不超过3000个字。为了更好地阅读,请将您的输出格式化为JSON:
+{"key_news": [{"date": "新闻日期", "content": "新闻内容", "potential_impact": "正面/负面/中性"}, {"date": "新闻日期", "content": "新闻内容", "potential_impact": "正面/负面/中性"}, ..., {"date": "新闻日期", "content": "新闻内容", "potential_impact": "正面/负面/中性"}]}
 """
 
 
@@ -69,7 +46,8 @@ class NewsAnalyzer(BaseModel):
         elif self.language == 'zh':
             self.system_prompt = SYSTEM_PROPMT_CHINESE
     
-    def run(self, data):
+    def run(self, data, run_path):
+        logger = logging.getLogger(run_path)
         company_name = data['company_name']
         if self.language == 'en':
             company_name_prompt = f"Company Name: {company_name}\n"
@@ -81,26 +59,22 @@ class NewsAnalyzer(BaseModel):
             news_prompt = f"新闻报道:\n"
         for idx, article in enumerate(data['news']):
             if self.language == 'en':
-                news_prompt += str(idx + 1) + '.' + f"[News Date:{article['news_time']}\nNews Title:{article['news_title']}\nNews Content:{article['news_content']}]\n"
+                news_prompt += str(idx + 1) + '.' + f"[News Date:{article['news_time']}\nNews Title:{article['news_title']}\nNews Content:{article['news_summary']}]\n\n"
             elif self.language == 'zh':
-                news_prompt += str(idx + 1) + '.' + f"[新闻日期:{article['news_time']}\n新闻标题:{article['news_title']}\n新闻内容:{article['news_content']}]\n"
-        # propmt = self.system_prompt + company_name_prompt + news_prompt
+                news_prompt += str(idx + 1) + '.' + f"[新闻日期:{article['news_time']}\n新闻标题:{article['news_title']}\n新闻内容:{article['news_summary']}]\n\n"
+
         propmt = company_name_prompt + news_prompt + '\n\n\n' + self.system_prompt
-        print(propmt)
-        response = self.model.simple_prompt(propmt)
-        print(response)
+        logger.debug('<<<prompt>>>\n' + propmt)
+        data['save']['news_anlyzer_prompt'] = propmt
+        response = self.model.robust_prompt(propmt)
+        logger.debug('<<<response>>>\n' + str(response))
         
-        try:
-            response_json = json.loads(response[0][7:-3].strip())
-        except Exception as e:
-            try:
-                response_json = json.loads(response[0])
-            except Exception as e:
-                match = re.search(r'\{.*\}', response[0], re.DOTALL)
-                response_json = json.loads(match.group(0))
+        response_json = robust_load_json(response[0])
+        logger.debug('<<<response_json>>>\n' + str(response_json))
+        data['save']['news_anlyzer_response'] = json.dumps(response_json, ensure_ascii=False)
                 
-        for key_new in response_json['key_news']:
-            key_new['raw_new'] = data['news'][int(key_new['news_id']) - 1]
+        # for key_new in response_json['key_news']:
+        #     key_new['raw_new'] = data['news'][int(key_new['news_id']) - 1]
         key_news = response_json['key_news']
         # try:
         #     key_news = ast.literal_eval(open('key_news.txt').readline())
@@ -108,11 +82,12 @@ class NewsAnalyzer(BaseModel):
         # except (ValueError, SyntaxError) as e:
         #     print("Error loading list:", e)
         for key_new in key_news:
+            key_new['concise_new'] = key_new['content']
             if self.language == 'zh':
-                key_new['concise_new'] = '新闻日期:' + key_new['raw_new']['news_time'] + '    ' + '新闻摘要:' + key_new['summary']
+                key_new['concise_new'] = '新闻日期:' + key_new['date'] + '    ' + '新闻内容:' + key_new['content']
             else:
-                key_new['concise_new'] = 'News Date:' + key_new['raw_new']['news_time'] + '    ' + 'Summary:' + key_new['summary']
-        key_news = sorted(key_news, key=lambda x: x['raw_new']['news_time'], reverse=True)
+                key_new['concise_new'] = 'News Date:' + key_new['date'] + '    ' + 'Summary:' + key_new['news_content']
+        key_news = sorted(key_news, key=lambda x: x['date'], reverse=True)
         return key_news
     
     def test(self):

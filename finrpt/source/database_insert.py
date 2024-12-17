@@ -52,14 +52,16 @@ def company_report_table_insert(db, data):
         c = conn.cursor()
         c.execute('''
         INSERT INTO company_report (
-        report_id, content, stock_code, date, title
-        ) VALUES (?, ?, ?, ?, ?)
+        report_id, content, stock_code, date, title, core_content, summary
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', (
             data.get('report_id'),
             data.get('content'),
             data.get('stock_code'),
             data.get('date'),
-            data.get('title')
+            data.get('title'),
+            data.get('core_content'),
+            data.get('summary')
         ))
         conn.commit()
         conn.close()
@@ -77,8 +79,8 @@ def company_news_table_insert(db, data):
         c = conn.cursor()
         c.execute('''
         INSERT INTO news (
-            news_url, read_num, reply_num, news_title, news_author, news_time, stock_code, news_content
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            news_url, read_num, reply_num, news_title, news_author, news_time, stock_code, news_content, news_summary, dec_response, news_decision
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
         data.get('news_url'),
         data.get('read_num'),
@@ -87,7 +89,10 @@ def company_news_table_insert(db, data):
         data.get('news_author'),
         data.get('news_time'),
         data.get('stock_code'),
-        data.get('news_content')
+        data.get('news_content'),
+        data.get('news_summary'),
+        data.get('dec_response'),
+        data.get('news_decision'),
         ))
         conn.commit()
         conn.close()

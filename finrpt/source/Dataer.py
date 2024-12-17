@@ -1,12 +1,17 @@
 import requests
+import time
 import sqlite3
+import akshare as ak
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+from finrpt.module.OpenAI import OpenAIModel
+from finrpt.utils.data_processing import post_process_report
 from lxml import etree
 import re
 import pandas as pd
 from tqdm import tqdm
 import yfinance as yf
+import pickle
 import json
 import pytz
 import pdb
@@ -29,9 +34,10 @@ from finrpt.source.database_insert import (
 from finrpt.source.database_query import company_news_table_query_by_url, announcement_table_query_by_url
 
 class Dataer:
-    def __init__(self, max_retry=1, database_name = 'cache.db'):
+    def __init__(self, max_retry=1, database_name = '/data/jinsong/FinRpt_v1/finrpt/source/cache.db', model_name = 'gpt-4o-mini'):
         self.max_retry = max_retry
         self.database_name = database_name
+        self.model = OpenAIModel(model_name=model_name)
         self._init_db()
 
     def _init_db(self):
@@ -142,32 +148,18 @@ class Dataer:
                 report_contents.append(page_content)
             return "\n".join(report_contents).strip().replace("\u3000", " ")
         
-        year = datetime.strptime(date, '%Y-%m-%d').year
-        month = datetime.strptime(date, '%Y-%m-%d').month
-        request_list = []
-        if month > 6:
-            request_type = '半年度报告全文'
-            report_id = stock_code + '_' + str(year) + '_Q2'
-            report_date = str(year) + '-06-30'
-            report_year = str(year)
-        else:
-            request_type = '年度报告全文'
-            report_id = stock_code + '_' + str(year - 1) + '_Q4'
-            report_date = str(year - 1) + '-12-31' 
-            report_year = str(year - 1)
+        def _get_report_id(report_type, date, stock_code):
+            if report_type == '半年度报告全文':
+                report_id = stock_code + '_' + date[:4] + '_Q2'
+            else:
+                date = datetime.strptime(date, "%Y-%m-%d") - relativedelta(years=1)
+                date = date.strftime("%Y-%m-%d")
+                report_id = stock_code + '_' + date[:4] + '_Q4'
+            return report_id
         
-        try:
-            conn = sqlite3.connect(self.database_name)
-            c = conn.cursor()
-            c.execute('SELECT * FROM company_report WHERE report_id = ?', (report_id,))
-            result = c.fetchone()
-            c.close()
-        except Exception as e:
-            result = None
-            print(e)
-            
-        if result:
-            return dict(zip(COMPANY_REPORT_TABLE_COLUMNS, result))
+        report_start_date = datetime.strptime(date, "%Y-%m-%d") - relativedelta(years=1)
+        report_start_date = report_start_date.strftime("%Y-%m-%d")
+        report_date = date
         
         break_flag = False
         content = ""
@@ -182,19 +174,35 @@ class Dataer:
             for report in reprot_list:
                 try:
                     date = report['notice_date'][:10]
-                    if date < report_date:
+                    if date > report_date:
+                        continue
+                    if date < report_start_date:
                         break_flag = True
                         break
                     the_report_type = report['columns'][0]['column_name']
-                    if the_report_type != request_type:
+                    if the_report_type not in ['半年度报告全文', '年度报告全文']:
                         continue
                     title = report['title']
                     if "英文" in title or "摘要" in title:
                         continue
-                    if report_year not in title:
-                        continue
                     art_code = report['art_code']
-                    content = _get_report_content(art_code=art_code)
+                    the_report_id = _get_report_id(the_report_type, date, stock_code)
+                    
+                    try:
+                        conn = sqlite3.connect(self.database_name)
+                        c = conn.cursor()
+                        c.execute('SELECT * FROM company_report WHERE report_id = ?', (the_report_id,))
+                        query_result = c.fetchone()
+                        c.close()
+                    except Exception as e:
+                        query_result = None
+                    
+                    if query_result:
+                        content = dict(zip(COMPANY_REPORT_TABLE_COLUMNS, query_result))
+                        return content
+                    else:
+                        return None # for report generate
+                        content = _get_report_content(art_code=art_code)
                     break_flag = True
                     break
                 except Exception as e:
@@ -205,12 +213,20 @@ class Dataer:
         if content == "":
             return None
         
+        core_content = post_process_report(content)
+        for retry in range(3):
+            report_agent_summary = self.model.simple_prompt('内容：\n' + core_content + '\n\n\n\n为了便于后续的大模型阅读理解，请将以上内容重新排版，舍弃表格等不重要信息。')[0]
+            if len(report_agent_summary) > 200:
+                break
+        
         result = {
-            'report_id': report_id,
+            'report_id': the_report_id,
             'date': date,
             'content': content,
             'stock_code': stock_code,
-            'title': title
+            'title': title,
+            'core_content': core_content,
+            'summary': report_agent_summary
         }
         company_report_table_insert(db=self.database_name, data=result)
         return result 
@@ -424,12 +440,23 @@ class Dataer:
                 break
         print(result)
 
-    def get_company_news_sina(self, stock_code, end_date, start_date = None):
+    def get_company_news_sina(self, stock_code, end_date, start_date = None, company_name=""):
         
         stock_map = {
             "SS": "sh",
             "SZ": "sz"
         }
+        
+        # # for report generate
+        # try:
+        #     conn = sqlite3.connect(self.database_name)
+        #     c = conn.cursor()
+        #     c.execute('''SELECT * FROM newsdup WHERE id=?''', (f"{stock_code}_{end_date}",))
+        #     result = c.fetchone()
+        #     return pickle.loads(result[1])
+        # except Exception as e:
+        #     return None
+      
 
         def _get_news_from_url(url):
             data_response = self._request_get(url)
@@ -447,15 +474,75 @@ class Dataer:
                     ann_data = data_page.xpath('//*[@class="blk_container"]')[0]
                     one_news = ann_data.xpath('string()').strip().split('\n\n')[0].strip()
                 except IndexError as e:
-                    print(e)
+                    try:
+                        data_response.encoding = 'gbk'
+                        data_page = etree.HTML(data_response.text)
+                        ann_data = data_page.xpath('//*[@id="artibody"]')[0]
+                        one_news = ann_data.xpath('string()').strip().split('\n\n')[0].strip()
+                        one_news = one_news.split('\t\t')[0]
+                    except Exception as e:
+                        # print(e)
+                        one_news = None
             except Exception as e:
                 print(e)
                 one_news = None
             return one_news
 
         if not start_date:
-            start_date = datetime.strptime(end_date, "%Y-%m-%d") - relativedelta(months=3)
+            start_date = datetime.strptime(end_date, "%Y-%m-%d") - relativedelta(months=1)
             start_date = start_date.strftime("%Y-%m-%d")
+            
+        # for report generate
+        # try:
+        #     conn = sqlite3.connect(self.database_name)
+        #     c = conn.cursor()
+        #     c.execute('''SELECT * FROM newsduped WHERE stock_code = ? AND news_time BETWEEN ? and ? ''', (stock_code, start_date, end_date))
+        #     results = c.fetchall()
+        #     resutls_list = []
+        #     for row in results:
+        #         resutls_list.append({
+        #             "news_url":row[0],
+        #             "read_num":row[1],
+        #             "reply_num":row[2],
+        #             "news_title":row[3],
+        #             "news_author":row[4],
+        #             "news_time":row[5],
+        #             "stock_code":row[6],
+        #             "news_content":row[7],
+        #             "news_summary":row[8],
+        #             "dec_response":row[9],
+        #             "news_decision":row[10]
+        #         })
+        #     return resutls_list
+        # except Exception as e:
+        #     return None
+            
+        # for report generate
+        try:
+            conn = sqlite3.connect(self.database_name)
+            c = conn.cursor()
+            c.execute('''SELECT * FROM newsemb WHERE stock_code = ? AND news_time BETWEEN ? and ? ''', (stock_code, start_date, end_date))  
+            results = c.fetchall()
+            resutls_list = []
+            for row in results:
+                resutls_list.append({
+                    "news_url":row[0],
+                    "read_num":row[1],
+                    "reply_num":row[2],
+                    "news_title":row[3],
+                    "news_author":row[4],
+                    "news_time":row[5],
+                    "stock_code":row[6],
+                    "news_content":row[7],
+                    "news_summary":row[8],
+                    "dec_response":row[9],
+                    "news_decision":row[10],
+                    "news_embedding":pickle.loads(row[11]),
+                })
+            return resutls_list
+        except Exception as e:
+            return []
+            
         result = []
         stock = stock_map[stock_code[-2:]] + stock_code[:-3]
         flag = False
@@ -476,6 +563,9 @@ class Dataer:
                     break
                 if ann_date[id] > end_date:
                     continue
+                
+                if str(element.text) == 'None':
+                    continue
 
                 try:
                     title = element.text.strip() 
@@ -483,29 +573,77 @@ class Dataer:
                 except Exception as e:
                     print(e)
                     continue
-
+                
                 query_result = content = company_news_table_query_by_url(db=self.database_name, news_url=link)
                 if content is None:
+                    continue # for report generate
                     content = _get_news_from_url(link)
-                if not content:
-                    continue
-                try:
-                    one_news = {
-                            "read_num": 0,
-                            "reply_num": 0,
-                            "news_url": link,
-                            "news_title": title,
-                            "news_author": "sina",
-                            "news_time": ann_date[id],
-                            "news_content": content[7],
-                            "stock_code": stock_code
-                    }
-                except Exception as e:
-                    print(e)
-                    continue
-                result.append(one_news)
-                if not query_result:
+                    if content is None:
+                        continue
+                    
+                    news_summary_prompt = """请总结以上新闻内容，最多不超过200个字。"""
+                    for retry_count in range(self.max_retry):
+                        try:
+                            news_summary = self.model.simple_prompt(content + "\n\n\n\n" + news_summary_prompt)[0]
+                            break
+                        except Exception as e:
+                            pass
+                    dec_prompt = """作为金融分析助手，你的任务是评估新闻事件对股票市场的潜在影响。请判断所提供的新闻是否可能影响{company_name}的未来股票走势。注意，单日的股票涨跌数据并不在考虑之列。提供分析理由时，请基于以下判定标准：
+行业动态：新闻是否反映出整体行业的重大变化或趋势？
+监管政策：新闻中是否提到影响该公司运作的政策或法规变动？
+公司财务：新闻是否涉及公司的财务报告、收购、合并等重大事项？
+市场竞争：新闻是否涉及该公司竞争对手的新战略或技术突破？
+宏观经济：新闻是否反映出可能影响公司运营的宏观经济变化？
+参考这些标准，给出分析理由，在提供理由之后，如果判断提供的新闻可能影响{company_name}公司未来股票变化,回答"[[[是]]]"，否则回答"[[[否]]]"。"""
+                    dec_prompt = dec_prompt.format(company_name=company_name)
+                    for retry_count in range(self.max_retry):
+                        try:
+                            dec_response = self.model.simple_prompt("新闻内容：" + news_summary + "\n\n\n\n" + dec_prompt)[0]
+                            if "[[[是]]]" in dec_response or "[[[否]]]" in dec_response:
+                                break
+                        except Exception as e:
+                            pass
+                    if "[[[是]]]" in dec_response:
+                        dec = "是"
+                    elif "[[[否]]]" in dec_response:
+                        dec = "否"
+                    else:
+                        continue
+                    
+                    try:
+                        one_news = {
+                                "read_num": 0,
+                                "reply_num": 0,
+                                "news_url": link,
+                                "news_title": title,
+                                "news_author": "sina",
+                                "news_time": ann_date[id],
+                                "news_content": content,
+                                "stock_code": stock_code,
+                                "news_summary": news_summary,
+                                "dec_response": dec_response,
+                                "news_decision": dec
+                        }
+                    except Exception as e:
+                        print(e)
+                        continue
+                    result.append(one_news)
                     company_news_table_insert(db=self.database_name, data=one_news)
+                else:
+                    one_news = {
+                                "read_num": 0,
+                                "reply_num": 0,
+                                "news_url": link,
+                                "news_title": title,
+                                "news_author": "sina",
+                                "news_time": ann_date[id],
+                                "news_content": query_result[-4],
+                                "stock_code": stock_code,
+                                "news_summary": query_result[-3],
+                                "dec_response": query_result[-2],
+                                "news_decision": query_result[-1]
+                        }
+                    result.append(one_news)
             if flag:
                 break
         return result
@@ -532,22 +670,193 @@ class Dataer:
         }
         return result
     
-    def get_financials_ak(self, stock_code, end_date, start_date=None):
+    def get_finacncials_ak(self, stock_code, end_date, start_date=None):
+        pd.options.mode.chained_assignment = None
         if not start_date:
-            start_date = datetime.strptime(end_date, "%Y-%m-%d") - relativedelta(months=3)
+            start_date = datetime.strptime(end_date, "%Y-%m-%d") - relativedelta(months=1)
             start_date = start_date.strftime("%Y-%m-%d")
-        pass
+            
+        # for report generate
+        try:
+            conn = sqlite3.connect(self.database_name)
+            c = conn.cursor()
+            c.execute(f"SELECT * FROM financials WHERE id='{stock_code}_{end_date}'")
+            result_raw = c.fetchone()
+            result = {
+                "stock_info": pickle.loads(pickle.loads(result_raw[1])),
+                "stock_data": pickle.loads(pickle.loads(result_raw[2])),
+                "stock_income": pickle.loads(pickle.loads(result_raw[3])),
+                "stock_balance_sheet": pickle.loads(pickle.loads(result_raw[4])),
+                "stock_cash_flow": pickle.loads(pickle.loads(result_raw[5])),
+                "csi300_stock_data": pickle.loads(pickle.loads(result_raw[6]))
+            }
+            return result
+        except Exception as e:
+            return None
+            
+            
+            
+        start_date_report = (datetime.strptime(end_date, "%Y-%m-%d") - relativedelta(years=2)).strftime("%Y-%m-%d")
+            
+        if stock_code[-2:] == 'SS':
+            stock_code_zh = 'sh' + stock_code[:-3]
+        if stock_code[-2:] == 'SZ':
+            stock_code_zh = 'sz' + stock_code[:-3]
+            
+        start_date_zh = start_date.replace('-', '')
+        end_date_zh = end_date.replace('-', '')
+        start_date_report_zh = start_date_report.replace('-', '')
+            
+        stock_info = ak.stock_individual_info_em(symbol=stock_code[:-3])
+        stock_info = stock_info.set_index('item')['value'].to_dict()
+        
+        # stock_data = ak.stock_zh_a_daily(symbol=stock_code_zh, start_date=start_date_zh, end_date=end_date_zh)
+        stock_data = ak.stock_zh_a_hist_tx(symbol=stock_code_zh, start_date=start_date_zh, end_date=end_date_zh)
+        stock_data = stock_data.rename(columns={'open': 'Open', 'close': 'Close', 'high': 'High', 'low': 'Low', 'volume': 'Volume'})
+        
+        csi300_stock_data = ak.stock_zh_a_hist_tx(symbol="sh000300", start_date=start_date_zh, end_date=end_date_zh)
+        
+        income_key = [
+            "报告日",
+            "营业总收入",
+            "营业总成本",
+            "营业利润",
+            "净利润",
+            "基本每股收益",
+            "稀释每股收益",
+            "投资收益",
+        ]
+        income_rename_dict = {
+            "营业收入": "营业总收入",
+            "营业支出": "营业总成本"
+        }
+        income = ak.stock_financial_report_sina(stock=stock_code_zh, symbol="利润表")
+        income = income.rename(columns={k: v for k, v in income_rename_dict.items() if k in income.columns and v not in income.columns})
+        stock_income = income[income_key]
+        
+        # qoq
+        quarter_over_quarter = [] 
+        for i in range(0, len(stock_income) - 1):
+            prev_value = stock_income['营业总收入'].iloc[i + 1]
+            current_value = stock_income['营业总收入'].iloc[i]
+            growth = (current_value - prev_value) / prev_value * 100
+            quarter_over_quarter.append(growth)
+        quarter_over_quarter += [None]
+        stock_income['收入环比增长率'] = quarter_over_quarter
+        # yoy
+        year_over_year = [] 
+        for i in range(0, len(stock_income) - 4):
+            prev_value = stock_income['营业总收入'].iloc[i + 4]
+            current_value = stock_income['营业总收入'].iloc[i]
+            growth = (current_value - prev_value) / prev_value * 100
+            year_over_year.append(growth)
+        year_over_year += [None, None, None, None]
+        stock_income['收入同比增长率'] = year_over_year
+        # Gross Profit Margin
+        stock_income['毛利率'] = (stock_income['营业总收入'] - stock_income['营业总成本']) / stock_income['营业总收入'] * 100
+        # Operating Profit Margin
+        stock_income['营业利润率'] = stock_income['营业利润'] / stock_income['营业总收入'] * 100
+        # Net Profit Margin
+        stock_income['净利润率'] = stock_income['净利润'] / stock_income['营业总收入'] * 100
+        stock_income = stock_income[(stock_income['报告日'] >= start_date_report_zh) & (stock_income['报告日'] <= end_date_zh)]
+        # date
+        stock_income['报告日'] = pd.to_datetime(stock_income['报告日'], format='%Y%m%d')
+        stock_income['报告日'] = stock_income['报告日'].dt.strftime('%Y-%m-%d')
+        stock_income = stock_income.rename(columns={'报告日': '日期'})
+        
+        balance_key = [
+            '报告日',
+            '流动资产合计',
+            '非流动资产合计',
+            '货币资金',
+            '应收账款',
+            '存货',
+            '固定资产净值',
+            '商誉',
+            '流动负债合计',
+            '非流动负债合计',
+            '短期借款',
+            '长期借款',
+            '应付账款',
+            '所有者权益',
+            '未分配利润',
+            '负债合计',
+            '所有者权益(或股东权益)合计',
+            '资产总计',
+            '负债和所有者权益(或股东权益)总计'
+        ]
+        balance = ak.stock_financial_report_sina(stock=stock_code_zh, symbol="资产负债表")
+        balance_key_copy = []
+        for me in balance_key:
+            if me in balance.columns:
+                balance_key_copy.append(me)
+        balance_key = balance_key_copy
+        stock_balance_sheet = balance[balance_key]
+        stock_balance_sheet['长期债务比率'] = stock_balance_sheet['长期借款'] / stock_balance_sheet['负债合计'] * 100
+        stock_balance_sheet = stock_balance_sheet[(stock_balance_sheet['报告日'] >= start_date_report_zh) & (stock_balance_sheet['报告日'] <= end_date_zh)]
+        stock_balance_sheet['报告日'] = pd.to_datetime(stock_balance_sheet['报告日'], format='%Y%m%d')
+        stock_balance_sheet['报告日'] = stock_balance_sheet['报告日'].dt.strftime('%Y-%m-%d')
+        stock_balance_sheet = stock_balance_sheet.rename(columns={'报告日': '日期'})
+        
+        cash_flow_key = [
+            '报告日',
+            '经营活动产生的现金流量净额',
+            '投资活动产生的现金流量净额',
+            '筹资活动产生的现金流量净额',
+            '现金及现金等价物净增加额',
+            '收回投资所收到的现金',
+            '取得投资收益收到的现金',
+            '购建固定资产、无形资产和其他长期资产所支付的现金',
+            '吸收投资收到的现金',
+            '取得借款收到的现金',
+            '偿还债务支付的现金',
+            '分配股利、利润或偿付利息所支付的现金'
+        ]
+        cash_flow = ak.stock_financial_report_sina(stock=stock_code_zh, symbol="现金流量表")
+        cash_flow_key_copy = []
+        for me in cash_flow_key:
+            if me in cash_flow.columns:
+                cash_flow_key_copy.append(me)
+        cash_flow_key = cash_flow_key_copy
+        stock_cash_flow = cash_flow[cash_flow_key]
+        stock_cash_flow = stock_cash_flow[(stock_cash_flow['报告日'] >= start_date_report_zh) & (stock_cash_flow['报告日'] <= end_date_zh)]
+        stock_cash_flow['报告日'] = pd.to_datetime(stock_cash_flow['报告日'], format='%Y%m%d')
+        stock_cash_flow['报告日'] = stock_cash_flow['报告日'].dt.strftime('%Y-%m-%d')
+        stock_cash_flow = stock_cash_flow.rename(columns={'报告日': '日期'})
+        
+        result = {
+            "stock_info": stock_info,
+            "stock_data": stock_data,
+            "stock_income": stock_income,
+            "stock_balance_sheet": stock_balance_sheet,
+            "stock_cash_flow": stock_cash_flow,
+            "csi300_stock_data": csi300_stock_data
+        }
+        return result
+
 
 
 if __name__ == "__main__":
     dataer = Dataer()
+    result = dataer.get_company_news_sina(stock_code='600519.SS', end_date='2024-10-25', company_name='贵州茅台')
     # result = dataer.get_company_info(stock_code='600519.SS')
     # result = dataer.get_company_announcement(stock_code='600519.SS', end_date='2024-10-19')
     # result = dataer.get_company_report(stock_code='600519.SS', date='2024-10-19')
     # result = dataer.get_company_news_sina(end_date='2024-10-19', stock_code='600519.SS')
     # dataer.get_finacncials_yf(stock_code='600519.SS', end_date='2024-10-28')
-    result = dataer.get_company_report_em(stock_code='600519.SS', date='2024-10-28')
+    # result = dataer.get_company_report_em(stock_code='600519.SS', date='2024-10-28')
+    # result = dataer.get_finacncials_ak(stock_code='600519.SS', end_date='2024-10-27')
+    # result = dataer.get_company_news_sina(stock_code='600519.SS', end_date='2024-8-27', company_name='贵州茅台')    
     
+    # stock_list = open('csi50.txt', 'r').read().split('\n')
+    # for stock_code in stock_list:
+    #     try:
+    #         print(stock_code)
+    #         result = dataer.get_company_report_em(date='2024-10-27', stock_code=stock_code)
+    #         print(result)
+    #     except Exception as e:
+    #         print(e)
+            
     
     
     

@@ -15,6 +15,7 @@ import requests
 import pickle
 import os
 import pdb
+import json
 
 
 FINE2C = {
@@ -316,12 +317,15 @@ def build_report(
     date,   
     save_path='./reports/'
 ):
-    get_share_performance(res_data, res_data['stock_code'], date)
-    get_pe_eps_performance(res_data, res_data['stock_code'], date)
-    get_revenue_performance(res_data, res_data['stock_code'], date)
-    share_performance_image_path="./figs/share_performance.png"
-    pe_eps_performance_image_path="./figs/pe_eps.png"
-    revenue_performance_image_path="./figs/revenue_performance.png"
+    figs_path = os.path.join(save_path, "figs")
+    if not os.path.exists(figs_path):
+        os.mkdir(figs_path)
+    get_share_performance(res_data, res_data['stock_code'], date, save_path=figs_path)
+    get_pe_eps_performance(res_data, res_data['stock_code'], date, save_path=figs_path)
+    get_revenue_performance(res_data, res_data['stock_code'], date, save_path=figs_path)
+    share_performance_image_path = os.path.join(figs_path, "share_performance.png")
+    pe_eps_performance_image_path = os.path.join(figs_path, "pe_eps.png")
+    revenue_performance_image_path = os.path.join(figs_path, "revenue_performance.png")
     
     company_name = res_data['company_name']
     stock_code = res_data['stock_code']
@@ -413,16 +417,25 @@ def build_report(
     frame_left_list.append(frame_title2)
     frame_left_list.append(Spacer(1, 5))
     df = res_data["financials"]['stock_income']
+    
+    # for akshare stock_income
+    df['日期'] = df['日期'].apply(lambda x: x[:-4] + '-' + x[4:6] + '-' + x[-2:])
+    df.set_index('日期', inplace=True)
+    df = df.head(4)
+    df = df.transpose()
     df.reset_index(inplace=True)
-    df = df[df['index'].isin(TARGETMAP.keys())]
-    df['index'] = df['index'].map(TARGETMAP)
-    df = df.applymap(lambda x: int(x / 1000000) if isinstance(x, (int, float)) and not pd.isna(x) else x)
-    df_columns = df.columns
-    df_new_columns = [""]
-    for column_name in list(df_columns)[1:]:
-        df_new_columns.append(str(column_name)[:10])
-    df.columns = df_new_columns
-    df = df[df.columns[:5]]
+    df.rename(columns={'index': ''}, inplace=True)
+    
+    # df.reset_index(inplace=True)
+    # df = df[df['index'].isin(TARGETMAP.keys())]
+    # df['index'] = df['index'].map(TARGETMAP)
+    # df = df.applymap(lambda x: int(x / 1000000) if isinstance(x, (int, float)) and not pd.isna(x) else x)
+    # df_columns = df.columns
+    # df_new_columns = [""]
+    # for column_name in list(df_columns)[1:]:
+    #     df_new_columns.append(str(column_name)[:10])
+    # df.columns = df_new_columns
+    # df = df[df.columns[:5]]
     table_data = []
     table_data += [df.columns.to_list()] + df.values.tolist()
     financias_table = get_financias_table('微软雅黑', table_data)
@@ -452,8 +465,8 @@ def build_report(
     c.setFont("微软雅黑", 9)
     height_1 = A4[1] - 170
     c.drawString(A4[0] - 200, height_1, "分析师: FinRpt")
-    c.drawString(A4[0] - 200, height_1 - 20, "版权: ALOHA FinTech")
-    c.drawString(A4[0] - 200, height_1 - 40, "地址: 中国人民大学高瓴人工智能学院")
+    c.drawString(A4[0] - 200, height_1 - 20, "版权: ****")
+    c.drawString(A4[0] - 200, height_1 - 40, "地址: ****")
     
     frame_title4 = draw_frame_title("基本状况", color1, 177, '微软雅黑')
     _1, _2 = frame_title4.wrap(0, 0)
@@ -502,8 +515,21 @@ def build_report(
 
     
 if __name__ == "__main__":
-    date = '2024-10-28'
-    data = pickle.load(open('maotai_1028_gpt4o.pkl', 'rb'))
+    date = '2024-11-05'
+    data_ = pickle.load(open('300750_mini_1027', 'rb'))
+    data = pickle.load(open('result.pkl', 'rb'))
+    data["analyze_risk"] = json.loads(data["risk_response"])['risks']
+    data["company_name"] = data["company_info"]["company_name"]
+    data["model_name"] = "gpt-4o"
     data['report_title'] = "业绩增长韧性延续，全年目标完成在望"
+    data["analyze_advisor"] = []
+    finance_response_json = json.loads(data["finance_write_response"])
+    news_response_json = json.loads(data["news_write_response"])
+    report_response_json = json.loads(data["report_write_response"])
+    trend_response_json = json.loads(data["trend_write_response"])
+    data["analyze_advisor"].append({'content': finance_response_json["段落"], 'title': finance_response_json["标题"]})
+    data["analyze_advisor"].append({'content': news_response_json["段落"], 'title': news_response_json["标题"]})
+    data["analyze_advisor"].append({'content': report_response_json["段落"], 'title': report_response_json["标题"]})
+    data['analyze_advisor'].append({'content': trend_response_json["段落"], 'title': trend_response_json["标题"], "rating": trend_response_json["评级"]})
     build_report(data, date) 
     
