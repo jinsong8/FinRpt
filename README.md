@@ -1,71 +1,87 @@
-# DISCO: Accurate and Reliable Stock Recommendation based on Causal Discovery and Dynamic Risk Modeling
+# FinRpt: Dataset, Evaluation System and LLM-based Multi-agent Framework for Equity Research Report Generation
 
->The stock recommendation has been widely studied in quantitative investment. Prevalent stock recommendation methods take multi-stock historical price features as input, model the correlation relations among stocks, and generate a ranking list of stocks to maximize investors' profits. Many problems in existing works are widely ignored. On the one hand, given that the relations in the stock market are often unidirectional, such as supplier-consumer, the correlation relation discovered in previous works does not accurately depict the market information flow. On the other hand, most previous methods overlook risk assessments, which may lead to intolerable losses in practical stock investing. Lastly, the single-time inference utilized by current methods is not practical for real-world stock market evaluation. In this paper, we propose an accurate and reliable stock recommendation method named DISCO. DISCO employs the causal discovery method and temporal Functional Causal Model (FCM) to discover and utilize the temporal causal graph. Simultaneously, in FCM, the risk is treated as a stochastic component disentangled from the market influences from other stocks. Thus causal discovery and dynamic risk modeling are tightly integrated into FCM to address the first two problems. At the inference stage, for a more comprehensive assessment of the recommendation result, we design a multi-situation inference strategy taking into account possible market situations. Based on these advantages, DISCO becomes an accurate, reliable, and comprehensive market evaluator. Experiments on three real-world stock markets indicate the superior profitability and risk assessment capability of DISCO.
+>While LLMs have shown great success in financial tasks like stock prediction and question answering, their application in fully automating Equity Research Report generation remains uncharted territory. In this paper, we formulate the Equity Research Report (ERR) Generation task for the first time. To address the data scarcity and the evaluation metrics absence, we present an open-source evaluation benchmark for ERR generation - FinRpt. We frame a Dataset Construction Pipeline that integrates 7 financial data types and produces a high-quality ERR dataset automatically, which could be used for model training and evaluation. We also introduce a comprehensive evaluation system including 11 metrics to assess the generated ERRs. Moreover, we propose a multi-agent framework specifically tailored to address this task, named FinRpt-Gen, and fine-tune several LLM-based agents on the proposed datasets. Experimental results indicate the data quality and metrics effectiveness of the benchmark FinRpt and the strong performance of FinRpt-Gen, showcasing their potential to drive innovation in the ERR generation field. 
 
 <div align="center">
-<img align="center" src="assets/model.jpg" width="90%"/>
+<img align="left" src="assets/pipeline.jpg" width="64.08%"/>
 </div>
 
-
-## 🗂️ Preparation
-
-**Datasets for [NASDAQ] and [NYSE]**:
-
-We adopt the data preprocessing from [RSR](https://github.com/fulifeng/Temporal_Relational_Stock_Ranking). You can download all files into the `./data/rsr` directory from their github website.
-
-**Dataset for [TSE]**:
-
-We download data of [Tokyo Stock Exchange](https://www.jpx.co.jp/english/) top 100 stocks from yfiance. We preprocess the data like [RSR](https://github.com/fulifeng/Temporal_Relational_Stock_Ranking) and construct the dataset. You need put the data into `./data/tse` directory.
+<div align="center">
+<img align="right" src="assets/agent.jpg" width="35.92%"/>
+</div>
 
 ## 🕹️ Environment Setup
 
 1. Create a new virtual environment
 ```
-conda create --name disco python=3.10
-conda activate disco
+conda create --name finrpt python=3.10
+conda activate finrpt
 ```
-2. Install requirement packages:
+2. Install requirement packages
 
 ```
 pip install -r requirements.txt
 ```
+3. Add Python environment variables
+```
+export PYTHONPATH="${PYTHONPATH}:<path_to_this_repo>"
+```
 
-## 🔧 Running
 
-1. Run main experiment:
+## 🔧 Structure
+
+### Dataset Construction Pipeline
+
+The corresponding code is in
 ```
-sh scripts/run_.sh
+FinRpt/dataset
 ```
-2. Run all experiments for [NASDAQ]
+
+### Data Collect Module
+
+The corresponding code is in
+```
+FinRpt/finrpt/source
+```
+
+### FinRpt Framework
+
+The corresponding code is in
+```
+FinRpt/finrpt/module
+```
+
+### Benchmark Evaluation
+
+The corresponding code is in
+```
+FinRpt/finrpt/benchmark
+```
+
+### Fine-tuning LLMs
+
+We use LLaMA-Factory repo to fine-tune LLMs. 
+
+The corresponding code is in
 
 ```
-sh scripts/ablation_nasdaq.sh
+FinRpt/finetune/LLaMA-Factory
 ```
-3. Run all experiments for [NYSE]
+
+### Website front-end code for FinRpt
+
+You can use the code to build the website for FinRpt and use the website to generate the ERRs conveniently.
+
+The corresponding code is in
 ```
-sh scripts/ablation_nyse.sh
-```
-4. Run all experiments for [TSE]
-```
-sh scripts/ablation_tse.sh
-```
-5. Run all ablation experiments for lag variable:
-```
-sh scripts/ablation_lag.sh
-```
-6. Run all ablation experiments for samples_per_graph and Nsamples variables:
-```
-sh scripts/ablation_MN.sh
-```
-7. Run all ablation experiments for most_likely_graph variable:
-```
-sh scripts/most_likely_graph.sh
+FinRpt/front
 ```
 
 ## 🌹 Acknowledgmentsons
 
-This project was adapted from [Rhino](https://github.com/microsoft/causica) and [RSR](https://github.com/fulifeng/Temporal_Relational_Stock_Ranking) repo. Special thanks for providing the foundation for this work.
+This project use [LLaMA-Factory](https://github.com/hiyouga/LLaMA-Factory) for mdoels fine-tuning and [ReportLab](https://www.reportlab.com/) for PDF report generation. Special thanks for providing the foundation for this work.
 
 ## 📚 License
+MIT License
 
-This code is distributed under an [MIT LICENSE]. Note that our code depends on other libraries and datasets which each have their own respective licenses that must also be followed.
+Disclaimer: We are sharing codes for academic purposes under the MIT education license. Nothing herein is financial advice, and NOT a recommendation to trade real money. Please use common sense and always first consult a professional before trading or investing.
