@@ -127,8 +127,6 @@ def run_remote(model_name, exp_type, ablation):
         
 
     progress_bar = tqdm(total=len(stock_ids))
-    
-    # _run_remote_run(stock_ids[0], progress_bar)
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [

@@ -93,7 +93,6 @@ class FinancialsAnalyzer(BaseModel):
         income_response = self.model.robust_prompt(income_prompt)
         logger.debug('<<<Income Response>>>\n' + str(income_response))
         data['save']['income_response'] = income_response[0]
-        # income_response = ('贵州茅台在2024年第三季度实现总收入约396.7亿元，同比增长15.5%，环比增长7.3%。销售成本稳定，毛利率达91.2%，营业利润率和净利润率分别为66%和48.2%，显示出强劲的盈利能力。每股收益（EPS）未披露，但净利润持续增长。与历史数据相比，盈利能力稳步提升，显示出良好的成本控制和市场需求。与行业基准相比，茅台保持领先地位，尽管面临市场竞争和成本压力。', 2393, 126)
         
         balance = financials['stock_balance_sheet']
         if self.language == 'zh':
@@ -105,7 +104,6 @@ class FinancialsAnalyzer(BaseModel):
         data['save']['balance_prompt_table'] = "分析日期:" + data["date"] + "\n\n" + "公司名称:" + data["company_name"] + "\n\n" + "资产负债表:\n" + balance.to_string() + "\n\n\n" + "指示:\n" + BALANCE_PROMPT_ZH
         balance_response = self.model.robust_prompt(balance_prompt)
         data['save']['balance_response'] = balance_response[0]
-        # balance_response = ('贵州茅台资产负债表显示其资产结构稳健，流动资产远超流动负债，流动性良好。长期债务较低，偿债能力强。股东权益持续增长，显示出强劲的长期投资潜力。与去年相比，资产和股东权益均有增长，表明财务状况改善。整体来看，公司财务健康，未来前景乐观。', 3218, 92)
         logger.debug('<<<Balance Response>>>\n' + str(balance_response))
         
         cash = financials['stock_cash_flow']
@@ -119,7 +117,6 @@ class FinancialsAnalyzer(BaseModel):
         cash_response = self.model.robust_prompt(cash_prompt)
         logger.debug('<<<Cash Response>>>\n' + str(cash_response))
         data['save']['cash_response'] = cash_response[0]
-        # cash_response = ('贵州茅台的经营现金流表现强劲，显示核心业务盈利能力稳健。投资活动中资本支出增加，表明对未来增长的投入。融资活动现金流波动较大，主要受债务和股息支付影响。整体现金管理良好，流动性充足，但需关注融资活动的波动对未来财务稳定性的影响。', 1596, 82)
             
         return income_response[0], balance_response[0], cash_response[0]
         

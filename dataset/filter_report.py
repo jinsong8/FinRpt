@@ -12,7 +12,7 @@ def filter_by_trend_and_threshold(file_path, threshold=0):
     rel_reports = [json.loads(x) for x in rel_reports]
     rel_reports = {x["id"]: x for x in rel_reports}
     
-    database_name = '/data/jinsong/FinRpt_v1/finrpt/source/cache.db'
+    database_name = '/data/name/FinRpt_v1/finrpt/source/cache.db'
     filter_gen_reports = []
     for i in range(len(gen_reports)):
         id = gen_reports[i]['id']
@@ -97,11 +97,6 @@ def filter_by_test(file_path):
     filter_gen_reports_str = [json.dumps(x, ensure_ascii=False) for x in filter_gen_reports]    
     with open("test_" + file_path, 'w') as f:
         f.write("\n".join(filter_gen_reports_str))
-    
-
 
 if __name__ == '__main__':
-    # filter_by_trend_and_threshold('alignment_gpt-4o.jsonl', threshold=0.3)
-    # filter_by_news_report_financials('filter_alignment_gpt-4o.jsonl')
-    # filter_by_train('filter_filter_alignment_gpt-4o.jsonl')
     filter_by_test('filter_filter_alignment_gpt-4o.jsonl')

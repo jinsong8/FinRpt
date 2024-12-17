@@ -94,27 +94,6 @@
             });
         });
 
-        // function fetchLogs() {
-        //     var stockCode = $('#stock-code').val();
-        //     var date = $('#date').val();
-        //     var logFilePath = `${stockCode}_${date}`;  // 合成日志文件路径
-
-        //     $.get('/get_logs', { path: logFilePath }, function(data) {
-        //         if (data.error) {
-        //             console.error(data.error);
-        //         } else {
-        //             const logContainer = $('#log-container');
-        //             const lastLog = logContainer.children().last().text();
-        //             const newLog = data.log;
-        //             if (lastLog !== newLog) {
-        //                 logContainer.append('<div>' + newLog + '</div>');
-        //                 logContainer.scrollTop(logContainer[0].scrollHeight);
-        //             }
-        //         }
-        //     });
-        // }
-
-        // setInterval(fetchLogs, 100);
     </script>
 </body>
 </html>

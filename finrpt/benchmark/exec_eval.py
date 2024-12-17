@@ -13,13 +13,10 @@ jieba.initialize()
 
 
 def run_app(args):
-    # load model & tokenizer
     model = args.model_name
 
-    # load dataset
     dataset = 'finrpt'
 
-    # 大模型推理回答&记录答案
     responses = []
     for _, record in tqdm(dataset.iterrows()):
         prompt = record['instruction']
@@ -143,11 +140,8 @@ def get_score_all(_path, model_name):
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    # parser.add_argument("-c", "--checkpoint-path", type=str, default='')
     parser.add_argument('--model_name', type=str, default='')
     parser.add_argument('--results_dir', type=str, default='results/model_results')
-    # parser.add_argument('--run_app', action='store_true') 
-    # parser.add_argument('--save_result_dir', type=str, default='./results')
     args = parser.parse_args()
     if args.model_name == '':
         file_paths = glob.glob(f"{args.results_dir}/*.jsonl")
@@ -162,6 +156,3 @@ if __name__ == '__main__':
                 executor.map(get_score_all_wrapper, model_names), total=len(model_names)
             ):
                 pass
-
-    # for model_name in model_names:
-    #     get_score_all('results/model_results', model_name)

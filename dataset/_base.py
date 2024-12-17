@@ -38,12 +38,6 @@ class Downloader:
         else:
             return None
 
-    # def _update_proxy(self):
-    #     if "china" in self.country or "China" in self.country:
-    #         return get_china_free_proxy(self.proxy_pages)
-    #     else:
-    #         return get_us_free_proxy(self.proxy_pages)
-
     def _request_get(self, url, headers = None, verify = None, params = None):
         if headers is None:
             headers = {

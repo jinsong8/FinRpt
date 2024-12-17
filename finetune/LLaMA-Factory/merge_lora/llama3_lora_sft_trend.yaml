@@ -1,8 +1,8 @@
 ### Note: DO NOT use quantized model or quantization_bit when merging lora adapters
 
 ### model
-model_name_or_path: /data/jinsong/FinRpt_v1/finetune/model_hub/LLM-Research/Meta-Llama-3___1-8B-Instruct
-adapter_name_or_path: /data/jinsong/FinRpt_v1/finetune/LLaMA-Factory/saves/trend_write
+model_name_or_path: /data/name/FinRpt_v1/finetune/model_hub/LLM-Research/Meta-Llama-3___1-8B-Instruct
+adapter_name_or_path: /data/name/FinRpt_v1/finetune/LLaMA-Factory/saves/trend_write
 template: llama3
 finetuning_type: lora
 

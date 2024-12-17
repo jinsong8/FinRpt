@@ -70,7 +70,7 @@ def get_logs():
     try:
         with open(log_file_path, 'r') as f:
             logs = f.readlines()
-        return {'log': logs[-1]}  # 返回最新一条日志
+        return {'log': logs[-1]} 
     except FileNotFoundError:
         return {'error': 'Log file not found'}, 404
     except Exception as e:

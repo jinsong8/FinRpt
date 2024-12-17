@@ -73,14 +73,7 @@ class NewsAnalyzer(BaseModel):
         logger.debug('<<<response_json>>>\n' + str(response_json))
         data['save']['news_anlyzer_response'] = json.dumps(response_json, ensure_ascii=False)
                 
-        # for key_new in response_json['key_news']:
-        #     key_new['raw_new'] = data['news'][int(key_new['news_id']) - 1]
         key_news = response_json['key_news']
-        # try:
-        #     key_news = ast.literal_eval(open('key_news.txt').readline())
-        #     print(key_news)  # 输出加载后的列表
-        # except (ValueError, SyntaxError) as e:
-        #     print("Error loading list:", e)
         for key_new in key_news:
             key_new['concise_new'] = key_new['content']
             if self.language == 'zh':

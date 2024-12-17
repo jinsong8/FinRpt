@@ -66,7 +66,6 @@ def trend_score(reference, candidate):
     ref_len = len(reference)
     new_reference = []
     new_candidate = []
-    # filter out empty generation
     for ref, can in zip(reference, candidate):
         if len(can) <= 1:
             continue
@@ -81,7 +80,6 @@ def trend_score(reference, candidate):
     candidate = new_candidate
     ref_trends = [1 if robust_load_json(ref)[" 评级 "] == ' 买入 ' else 0 for ref in reference]
     can_trends = [1 if robust_load_json(can)[" 评级 "] == ' 买入 ' else 0 for can in candidate]
-    # add error data for failed generation
     for i in range(0, ref_len - len(new_reference)):
         ref_trends.append(0)
         can_trends.append(1)

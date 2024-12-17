@@ -14,11 +14,10 @@ import json
 from sklearn.metrics import accuracy_score
 
 def check_news():
-    database_name = '/data/jinsong/FinRpt_v1/finrpt/source/cache.db'
+    database_name = '/data/name/FinRpt_v1/finrpt/source/cache.db'
     stock_list_csi300 = open('csi300.txt', 'r').read().split('\n')
     stock_list_csi500 = open('csi500.txt', 'r').read().split('\n')
     stock_list = stock_list_csi300 + stock_list_csi500
-    # date_list = ['2024-11-05', '2024-10-29', '2024-10-22', '2024-10-15', '2024-10-08', '2024-10-01', '2024-09-24', '2024-09-17', '2024-09-10', '2024-09-03']
     date_list = ['2024-11-05', '2024-10-29', '2024-10-22', '2024-10-15', '2024-10-08', '2024-10-01', '2024-09-24', '2024-09-17', '2024-09-10', '2024-09-03', '2024-08-27', '2024-08-20', '2024-08-13', '2024-08-06', '2024-07-30', '2024-07-23', '2024-07-16', '2024-07-09', '2024-07-02', '2024-06-25', '2024-06-18']
     date2num = {}
     for stock_code in stock_list:
@@ -40,16 +39,11 @@ def check_news():
             except Exception as e:
                 print(f'Error occurred while executing the SQL query: {e}')
                 
-    # for date, num_list in date2num.items():
-    #     avg_num = sum(num_list) / len(num_list)
-    #     print(f'{date}: {avg_num:.2f}')
     date2num_list = [(date, sum(num_list)/len(num_list)) for date, num_list in date2num.items()]
     print(date2num_list)
         
     with open('date2num.pkl', 'wb') as f:
         pickle.dump(date2num, f)
-        
-    # [('2024-11-05', 138.66333333333333), ('2024-10-26', 106.41666666666667), ('2024-10-16', 99.25666666666666), ('2024-10-06', 103.48666666666666), ('2024-09-26', 147.64666666666668), ('2024-09-16', 106.24), ('2024-09-06', 68.86666666666666), ('2024-08-27', 9.69), ('2024-08-17', 0.0), ('2024-08-07', 0.0), ('2024-07-28', 0.0), ('2024-07-18', 0.0), ('2024-07-08', 0.0), ('2024-06-28', 0.0), ('2024-06-18', 0.0), ('2024-06-08', 0.0), ('2024-05-29', 0.0), ('2024-05-19', 0.0)]
             
 def check_trend():
     results = pickle.load(open('csi800_change.pkl', 'rb'))
@@ -57,7 +51,7 @@ def check_trend():
     stock_list_csi500 = open('csi500.txt', 'r').read().split('\n')
     stock_list = stock_list_csi300 + stock_list_csi500
     date_list = ['2024-11-05', '2024-10-29', '2024-10-22', '2024-10-15', '2024-10-08', '2024-10-01', '2024-09-24', '2024-09-17', '2024-09-10', '2024-09-03']
-    database_name = '/data/jinsong/FinRpt_v1/finrpt/source/cache.db'
+    database_name = '/data/name/FinRpt_v1/finrpt/source/cache.db'
     standard_ids = []
     for stock_code in stock_list:
         for date in date_list:
@@ -73,15 +67,13 @@ def check_trend():
     query_ids = [query_result[0] for query_result in query_results]
     diff_ids = list(set(standard_ids) - set(query_ids))
     diff_ids = sorted(diff_ids)
-    # lack of stock data for that day
-    # ['000958.SZ_2024-10-08', '000958.SZ_2024-10-15', '002736.SZ_2024-09-03', '600150.SS_2024-09-10', '600150.SS_2024-09-17', '600837.SS_2024-09-10', '600837.SS_2024-09-17', '600837.SS_2024-09-24', '600837.SS_2024-10-01', '600837.SS_2024-10-08', '601211.SS_2024-09-10', '601211.SS_2024-09-17', '601211.SS_2024-09-24', '601211.SS_2024-10-01', '601211.SS_2024-10-08', '601989.SS_2024-09-10', '601989.SS_2024-09-17']
     print(diff_ids)
 
 def check_financials():
     stock_list_csi300 = open('csi300.txt', 'r').read().split('\n')
     stock_list_csi500 = open('csi500.txt', 'r').read().split('\n')
     stock_list = stock_list_csi300 + stock_list_csi500
-    database_name = '/data/jinsong/FinRpt_v1/finrpt/source/cache.db'
+    database_name = '/data/name/FinRpt_v1/finrpt/source/cache.db'
     date_list = ['2024-11-05', '2024-10-29', '2024-10-22', '2024-10-15', '2024-10-08', '2024-10-01', '2024-09-24', '2024-09-17', '2024-09-10', '2024-09-03']
     
     try:
@@ -107,7 +99,7 @@ def check_company_report():
     stock_list_csi300 = open('csi300.txt', 'r').read().split('\n')
     stock_list_csi500 = open('csi500.txt', 'r').read().split('\n')
     stock_list = stock_list_csi300 + stock_list_csi500
-    database_name = '/data/jinsong/FinRpt_v1/finrpt/source/cache.db'
+    database_name = '/data/name/FinRpt_v1/finrpt/source/cache.db'
     
     query_stocks = []
     
@@ -124,13 +116,12 @@ def check_company_report():
     
     diff_ids = list(set(stock_list) - set(query_stocks))
     print(diff_ids)
-    # ['000636.SZ', '600316.SS', '300888.SZ', '601988.SS', '600036.SS', '000750.SZ', '601156.SS', '002385.SZ', '002938.SZ', '600016.SS', '300558.SZ', '601088.SS', '000792.SZ']
 
 def check_report():
     dir = 'reports'
     root_files = os.listdir(dir)
     jsonl = []
-    database_name = '/data/jinsong/FinRpt_v1/finrpt/source/cache.db'
+    database_name = '/data/name/FinRpt_v1/finrpt/source/cache.db'
     matter_key = ['id', 'stock_code', 'date', 'news_anlyzer_prompt', 'news_anlyzer_response', 'income_prompt', 'income_response', 'balance_prompt', 'balance_response', 'cash_prompt', 'cash_response', 'finance_write_prompt', 'finance_write_response', 'news_write_prompt', 'news_write_response', 'report_write_prompt', 'report_write_response', 'risk_prompt', 'risk_response', 'trend_write_prompt', 'trend_write_response']
     query_list = []
     standard_list = []
@@ -148,8 +139,6 @@ def check_report():
         id=json_raw["id"]
         jsonl.append(json.dumps(json_fillter, ensure_ascii=False))
         query_list.append(1 if json.loads(json_raw["trend_write_response"])["评级"] == "买入" else 0)
-        # if query_list[-1] == 0:
-        #     print(f"{root_file}")
         try:
             conn = sqlite3.connect(database_name)
             c = conn.cursor()
@@ -160,7 +149,6 @@ def check_report():
         standard_list.append(1 if query_results[3] > 0 else 0)
         
     print(query_list)
-    # [1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1]
     print(sum(query_list) / len(query_list))
     print(standard_list)
     print(sum(standard_list) / len(standard_list))
@@ -175,7 +163,7 @@ def check_report_from_jsonl(file_path):
     dir = 'reports'
     root_files = os.listdir(dir)
     jsonl = []
-    database_name = '/data/jinsong/FinRpt_v1/finrpt/source/cache.db'
+    database_name = '/data/name/FinRpt_v1/finrpt/source/cache.db'
     matter_key = ['id', 'stock_code', 'date', 'news_anlyzer_prompt', 'news_anlyzer_response', 'income_prompt', 'income_response', 'balance_prompt', 'balance_response', 'cash_prompt', 'cash_response', 'finance_write_prompt', 'finance_write_response', 'news_write_prompt', 'news_write_response', 'report_write_prompt', 'report_write_response', 'risk_prompt', 'risk_response', 'trend_write_prompt', 'trend_write_response']
     query_list = []
     standard_list = []
@@ -199,10 +187,7 @@ def check_report_from_jsonl(file_path):
             print(f'Error occurred while executing the SQL query: {e}')
         standard_list.append(1 if query_results[3] > 0 else 0)
         
-    # print(query_list)
-    # [1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1]
     print(sum(query_list) / len(query_list))
-    # print(standard_list)
     print(sum(standard_list) / len(standard_list))
     acc = accuracy_score(standard_list, query_list)
     print(acc)
@@ -210,10 +195,4 @@ def check_report_from_jsonl(file_path):
     
 
 if __name__ == '__main__':
-    # check_trend_async()
-    # check_news()
-    # check_financials()
-    # check_trend()
-    # check_company_report()
-    # check_report()
     check_report_from_jsonl('filter_filter_alignment_gpt-4o.jsonl')

@@ -79,8 +79,6 @@ def alignment_research_report(file_path):
     lock = threading.Lock()
     
     progeress_bar = tqdm(total=len(re_param))
-    
-    # alignment_research_report_row('600760.SS', '2024-09-03', lock, progeress_bar)
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [

@@ -57,13 +57,12 @@ def setup_logger(log_name='finrpt', log_file='finrpt.log'):
     console_handler.setFormatter(formatter)
     file_handler.setFormatter(formatter)
 
-    # logger.addHandler(console_handler)
     logger.addHandler(file_handler)
 
     return logger
 
 class FinRptSingle:
-    def __init__(self, model_name="gpt-4o", max_rounds=3, language='zh', database_name='/data/jinsong/FinRpt_v1/finrpt/source/cache.db', save_path='./reports'):
+    def __init__(self, model_name="gpt-4o", max_rounds=3, language='zh', database_name='/data/name/FinRpt_v1/finrpt/source/cache.db', save_path='./reports'):
         self.advisor = Advisor(model_name=model_name, max_rounds=max_rounds, language=language)
         self.financials_analyzer = FinancialsAnalyzer(model_name=model_name, max_rounds=max_rounds, language=language)
         self.news_analyzer = NewsAnalyzer(model_name=model_name, max_rounds=max_rounds, language=language)
@@ -134,11 +133,9 @@ class FinRptSingle:
                 'stock_code': data['stock_code'],
                 'title': '',
                 'core_content': ''
-                # 'summary': '\n\n'.join([ne['news_time'] + ': ' + ne['news_summary'] for ne in data["news"]])
                 
             }
             print("No report found for this date")
-        # data["report"] = self.post_process_report(report)
         data["report"] = report
         data["save"]["report"] = data["report"]
         logger.debug(str(data["report"]['summary']))
@@ -194,7 +191,6 @@ class FinRptSingle:
         result_save_path = os.path.join(run_path, 'result.pkl')
         pickle.dump(data['save'], open(result_save_path, 'wb'))
         
-        # logger.info("Building report for %s at %s" % (data["company_name"], data["date"]))
         # build_report(data, date, run_path)
         
     def post_process_news(self, news):
@@ -219,12 +215,5 @@ class FinRptSingle:
         
 if __name__ == '__main__':
     finrpt = FinRptSingle(model_name="gpt-4o-mini")
-    # finrpt = FinRpt(model_name="gpt-4o-mini")
-    # finrpt.run(date='2024-10-28', stock_code='002594.SZ')
-    # finrpt.run(date='2024-10-28', stock_code='600519.SS')
-    # finrpt.run(date='2024-10-28', stock_code='600029.SZ')
-    # finrpt.run(date='2024-10-28', stock_code='600941.SS')
-    # finrpt.run(date='2024-10-08', stock_code='000002.SZ')
-    # TODO: debug for report not found
     finrpt.run(date='2024-11-05', stock_code='601857.SS')
     

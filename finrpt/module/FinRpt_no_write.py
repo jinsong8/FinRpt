@@ -37,13 +37,12 @@ def setup_logger(log_name='finrpt', log_file='finrpt.log'):
     console_handler.setFormatter(formatter)
     file_handler.setFormatter(formatter)
 
-    # logger.addHandler(console_handler)
     logger.addHandler(file_handler)
 
     return logger
 
 class FinRpt_no_write:
-    def __init__(self, model_name="gpt-4o", max_rounds=3, language='zh', database_name='/data/jinsong/FinRpt_v1/finrpt/source/cache.db', save_path='./reports'):
+    def __init__(self, model_name="gpt-4o", max_rounds=3, language='zh', database_name='/data/name/FinRpt_v1/finrpt/source/cache.db', save_path='./reports'):
         if "finetune" in model_name:
             real_model_name = model_name
             model_name = 'gpt-4o'
@@ -106,7 +105,6 @@ class FinRpt_no_write:
         data["news"] = self.post_process_news(news)
         data["save"]["news"] = data["news"]
         logger.debug(str(data["news"]))
-        # data["news"] = news
         
         logger.info("Getting report for %s at %s" % (data["company_name"], data["date"]))
         report = self.dataer.get_company_report_em(stock_code=stock_code, date=date)
@@ -120,11 +118,8 @@ class FinRpt_no_write:
                 'stock_code': data['stock_code'],
                 'title': '',
                 'core_content': ''
-                # 'summary': '\n\n'.join([ne['news_time'] + ': ' + ne['news_summary'] for ne in data["news"]])
-                
             }
             print("No report found for this date")
-        # data["report"] = self.post_process_report(report)
         data["report"] = report
         data["save"]["report"] = data["report"]
         logger.debug(str(data["report"]['summary']))
@@ -173,7 +168,6 @@ class FinRpt_no_write:
         data['report_title'] = data["company_info"]["company_name"] + "研报（" + date + "）"
         
         result_save_path = os.path.join(run_path, 'result.pkl')
-        # json.dump(data['save'], open(result_save_path, 'w'), ensure_ascii=False)
         pickle.dump(data['save'], open(result_save_path, 'wb'))
         
         logger.info("Building report for %s at %s" % (data["company_name"], data["date"]))

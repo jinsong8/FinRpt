@@ -2,7 +2,7 @@ import transformers
 import torch
 import pdb
 
-model_id = "/data/jinsong/FinRpt_v1/finetune/model_hub/LLM-Research/Meta-Llama-3___1-8B-Instruct"
+model_id = "/data/name/FinRpt_v1/finetune/model_hub/LLM-Research/Meta-Llama-3___1-8B-Instruct"
 
 pipeline = transformers.pipeline(
     "text-generation",

@@ -14,65 +14,62 @@ class Eastmoney_Streaming(Downloader):
         super().__init__(args)
         self.dataframe = pd.DataFrame()
 
-    # def download_streaming_stock(self, stock = "600519", rounds = 3):
-    #     print( "Geting pages: ", end = "")
-    #     if rounds > 0:
-    #         for r in range(rounds):
-    #             br = self._gather_pages(stock, r)
-    #             if br == "break":
-    #                 break
-    #     else:
-    #         r = 1
-    #         error_count = 0
-    #         while 1:
-    #             br = self._gather_pages(stock, r)
-    #             if br == "break":
-    #                 break
-    #             elif br == "Error":
-    #                 error_count +=1
-    #             if error_count>10:
-    #                 print("Connection Error")
-    #             r += 1
-    #     print( f"Get total {r+1} pages.")
-    #     self.dataframe = self.dataframe.reset_index(drop = True)
+    def download_streaming_stock(self, stock = "600519", rounds = 3):
+        print( "Geting pages: ", end = "")
+        if rounds > 0:
+            for r in range(rounds):
+                br = self._gather_pages(stock, r)
+                if br == "break":
+                    break
+        else:
+            r = 1
+            error_count = 0
+            while 1:
+                br = self._gather_pages(stock, r)
+                if br == "break":
+                    break
+                elif br == "Error":
+                    error_count +=1
+                if error_count>10:
+                    print("Connection Error")
+                r += 1
+        print( f"Get total {r+1} pages.")
+        self.dataframe = self.dataframe.reset_index(drop = True)
     
-    # def _gather_pages(self, stock, page):
-    #     print( page, end = " ")
-    #     url = f"https://guba.eastmoney.com/list,{stock},1,f_{page}.html"
-    #     headers = {
-    #         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
-    #     }
+    def _gather_pages(self, stock, page):
+        print( page, end = " ")
+        url = f"https://guba.eastmoney.com/list,{stock},1,f_{page}.html"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+        }
 
-    #     requests.DEFAULT_RETRIES = 5  # 增加重试连接次数
-    #     s = requests.session()
-    #     s.keep_alive = False  # 关闭多余连接
+        requests.DEFAULT_RETRIES = 5  
+        s = requests.session()
+        s.keep_alive = False 
         
-    #     response = self._request_get(url, headers=headers)
-    #     if response.status_code != 200:
-    #         return "Error"
+        response = self._request_get(url, headers=headers)
+        if response.status_code != 200:
+            return "Error"
         
-    #     # gather the comtent of the first page
-    #     # pdb.set_trace()
-    #     page = etree.HTML(response.text)
-    #     trs = page.xpath('//*[@id="mainlist"]/div/ul/li[1]/table/tbody/tr')
-    #     have_one = False
-    #     for item in trs:
-    #         have_one = True
-    #         read_amount = item.xpath("./td[1]//text()")[0]
-    #         comments = item.xpath("./td[2]//text()")[0]
-    #         title = item.xpath("./td[3]/div/a//text()")[0]
-    #         content_link = item.xpath("./td[3]/div/a/@href")[0]
-    #         author = item.xpath("./td[4]//text()")[0]
-    #         time = item.xpath("./td[5]//text()")[0]
-    #         tmp = pd.DataFrame([read_amount, comments, title, content_link, author, time]).T
-    #         columns = [ "read amount", "comments", "title", "content link", "author", "create time" ]
-    #         tmp.columns = columns
-    #         self.dataframe = pd.concat([self.dataframe, tmp])
-    #         #print(title)
-    #     if have_one == False:
-    #         return "break"
+        page = etree.HTML(response.text)
+        trs = page.xpath('//*[@id="mainlist"]/div/ul/li[1]/table/tbody/tr')
+        have_one = False
+        for item in trs:
+            have_one = True
+            read_amount = item.xpath("./td[1]//text()")[0]
+            comments = item.xpath("./td[2]//text()")[0]
+            title = item.xpath("./td[3]/div/a//text()")[0]
+            content_link = item.xpath("./td[3]/div/a/@href")[0]
+            author = item.xpath("./td[4]//text()")[0]
+            time = item.xpath("./td[5]//text()")[0]
+            tmp = pd.DataFrame([read_amount, comments, title, content_link, author, time]).T
+            columns = [ "read amount", "comments", "title", "content link", "author", "create time" ]
+            tmp.columns = columns
+            self.dataframe = pd.concat([self.dataframe, tmp])
+        if have_one == False:
+            return "break"
     
-    # gte the single reporter list all for subsequent download
+    # get the single reporter list all for subsequent download
     def download_single_reporter_list_all(self):
         list_url = "https://reportapi.eastmoney.com/report/list2"
         list_post_data_pageNo_max = 1755
@@ -119,7 +116,7 @@ class Eastmoney_Streaming(Downloader):
         single_reporter_list = self._load_json_list(single_reporter_list_path)
         for single_reporter in tqdm(single_reporter_list):
             infoCode = single_reporter['infoCode']
-            if os.path.exists(f'/data/jinsong/data/FinRpt/dataset/data/eastmoney_single_reporter_pdf/{infoCode}.pdf'):
+            if os.path.exists(f'/data/name/data/FinRpt/dataset/data/eastmoney_single_reporter_pdf/{infoCode}.pdf'):
                 continue
             single_reporter_url = f'https://data.eastmoney.com/report/info/{infoCode}.html'
             response = self._request_get(single_reporter_url)
@@ -140,7 +137,7 @@ class Eastmoney_Streaming(Downloader):
                 print(e, infoCode)
             try:
                 pdf_url = page.xpath('/html/body/div[1]/div[7]/div[4]/div[1]/div[1]/div[1]/div/span[5]/a')
-                pdf_save_path = f'/data/jinsong/data/FinRpt/dataset/data/eastmoney_single_reporter_pdf/{infoCode}.pdf'
+                pdf_save_path = f'/data/name/data/FinRpt/dataset/data/eastmoney_single_reporter_pdf/{infoCode}.pdf'
                 if len(pdf_url) > 0 and not os.path.exists(pdf_save_path):
                     pdf_url = pdf_url[0].attrib['href']
                     pdf_response = self._request_get(pdf_url)
@@ -158,11 +155,11 @@ class Eastmoney_Streaming(Downloader):
     def download_industry_reporter_all(self):
         industry_reporter_list_path = './data/eastmoney_industry_reporter_list_all.json'
         industry_reporter_list = self._load_json_list(industry_reporter_list_path)
-        if not os.path.exists('/data/jinsong/FinRpt/dataset/data/eastmoney_industry_reporter_pdf'):
-            os.makedirs('/data/jinsong/FinRpt/dataset/data/eastmoney_industry_reporter_pdf')
+        if not os.path.exists('/data/name/FinRpt/dataset/data/eastmoney_industry_reporter_pdf'):
+            os.makedirs('/data/name/FinRpt/dataset/data/eastmoney_industry_reporter_pdf')
         for industry_reporter in tqdm(industry_reporter_list):
             infoCode = industry_reporter['infoCode']
-            if os.path.exists(f'/data/jinsong/FinRpt/dataset/data/eastmoney_industry_reporter_pdf/{infoCode}.pdf'):
+            if os.path.exists(f'/data/name/FinRpt/dataset/data/eastmoney_industry_reporter_pdf/{infoCode}.pdf'):
                 continue
             industry_reporter_url = f'https://data.eastmoney.com/report/zw_industry.jshtml?infocode={infoCode}'
             response = self._request_get(industry_reporter_url)
@@ -185,7 +182,7 @@ class Eastmoney_Streaming(Downloader):
                 print(e, infoCode)
             try:
                 pdf_url = page.xpath('//a[@class="pdf-link"]')
-                pdf_save_path = f'/data/jinsong/FinRpt/dataset/data/eastmoney_industry_reporter_pdf/{infoCode}.pdf'
+                pdf_save_path = f'/data/name/FinRpt/dataset/data/eastmoney_industry_reporter_pdf/{infoCode}.pdf'
                 if len(pdf_url) > 0 and not os.path.exists(pdf_save_path):
                     pdf_url = pdf_url[0].attrib['href']
                     pdf_response = self._request_get(pdf_url)
@@ -195,7 +192,7 @@ class Eastmoney_Streaming(Downloader):
                 print(e, infoCode)
             industry_reporter['report_paragraphs'] = report_paragraphs
             try:
-                with open(f'/data/jinsong/FinRpt/dataset/data/eastmoney_industry_reporter_all.json', 'a', encoding='utf8') as f:
+                with open(f'/data/name/FinRpt/dataset/data/eastmoney_industry_reporter_all.json', 'a', encoding='utf8') as f:
                     f.write(json.dumps(industry_reporter, ensure_ascii=False) + '\n')
             except Exception as e:
                 print(e, infoCode)
@@ -204,7 +201,4 @@ class Eastmoney_Streaming(Downloader):
 
 if __name__ == "__main__":
     eastmoney = Eastmoney_Streaming({'max_retry': 5})
-    # eastmoney.download_single_reporter_list_all()
     eastmoney.download_single_reporter_all()
-    # eastmoney.download_industry_reporter_list_all()
-    # eastmoney.download_industry_reporter_all()

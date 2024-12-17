@@ -86,24 +86,6 @@ class Advisor(BaseModel):
         concise_news = [new['concise_new'] for new in data['analyze_news']]
         news_prompt = '\n'.join(concise_news)
         report_prompt = data['report']['title'] + ":[[[" + data['report']['summary'].strip() + "]]]"
-        # advisor_prompt = "分析日期: " + data["date"] + "\n\n" + \
-        #          "公司名称: " + data["company_name"] + "\n\n" + \
-        #          "财务数据:\n" + financials_prompt + "\n\n" + \
-        #          "关键新闻:\n" + news_prompt + "\n\n" + \
-        #          "股票半年报或年报:\n" + report_prompt + "\n\n" + \
-        #           self.system_prompt
-        # logger.debug('<<<prompt>>>\n' + advisor_prompt)
-        # for i in range(self.max_rounds):
-        #     try:
-        #         response = self.model.simple_prompt(advisor_prompt)
-        #         logger.debug('<<<response>>>\n' + str(response))
-        #         response_json = robust_load_json(response[0])
-        #         break
-        #     except Exception as e:
-        #         print("Error occurred during round {}".format(i+1), e)
-
-        # response_json = json.loads('{"report": [{"content": "贵州茅台在2024年第三季度表现出色，实现总收入396.7亿元，同比增长15.5%，环比增长7.3%。毛利率高达91.2%，营业利润率和净利润率分别为66%和48.2%，显示出强劲的盈利能力。资产负债表显示出稳健的财务结构，流动资产远超流动负债，长期债务较低，股东权益持续增长。经营现金流表现强劲，投资活动中资本支出增加，显示出对未来增长的投入。整体来看，贵州茅台的财务表现稳健，盈利能力和财务健康状况均优于行业平均水平。", "title": "贵州茅台财务表现分析"}, {"content": "近期的关键新闻显示，市场对贵州茅台的信心稳固。中邮证券给予买入评级，易方达基金看好其股东回报水平。茅台的ESG评级提升至BBB级，显示其在环境、社会和治理方面的进步。大宗交易的成交价与市场持平，显示出市场对其价格的认可。尽管中秋期间需求下滑导致股价短期波动，但整体市场情绪依然积极。央行和证监会的政策利好也为茅台市值带来显著提升。短期来看，市场对茅台的信心依然强劲，长期则受益于稳健的财务表现和政策支持。", "title": "市场影响与趋势分析"}, {"content": "贵州茅台在保持核心竞争力的同时，积极拓展市场和提升品牌价值。通过与故宫博物院的合作，茅台在文化遗产保护和利用方面展现出创新的战略方向。公司持续推进数字化转型，提升管理体系现代化水平。段永平对其商业模式和现金流充沛的信心，进一步证明其适合长期持有。未来，茅台将继续依靠其独特的品牌和品质优势，结合政策利好和市场需求，推动高质量发展，值得投资者关注其在国际市场的扩展和创新举措。", "title": "战略方向与发展潜力"}]}')
-        # logger.debug('<<<response_json>>>\n' + str(response_json))
         
         finance_write_prompt = "分析日期: " + data["date"] + "\n\n" + \
                  "公司名称: " + data["company_name"] + "\n\n" + \
@@ -111,11 +93,6 @@ class Advisor(BaseModel):
         logger.debug('<<<finance_write_prompt>>>\n' + finance_write_prompt)
         data['save']['finance_write_prompt'] = finance_write_prompt
         
-        # for report generate
-        if data["trend"] > 0:
-            finance_write_prompt_ = "因为未来的实际股票走势良好，建议给出正面评价\n\n" + finance_write_prompt
-        else:
-            finance_write_prompt_ = "因为未来的实际股票走势不好，建议给出负面评价\n\n" + finance_write_prompt
         finance_write_prompt_ = finance_write_prompt
         if "finetune" in self.model_name:
             if "llama" in self.model_name:
@@ -134,11 +111,6 @@ class Advisor(BaseModel):
                  "公司名称: " + data["company_name"] + "\n\n" + \
                  "关键新闻:\n" + news_prompt + "\n\n\n" + PROMPT_NEWS
         
-        # for report generate
-        if data["trend"] > 0:
-            news_write_prompt_ = "因为未来的实际股票走势良好，建议给出正面评价\n\n" + news_write_prompt
-        else:
-            news_write_prompt_ = "因为未来的实际股票走势不好，建议给出负面评价\n\n" + news_write_prompt
         news_write_prompt_ = news_write_prompt
         
         logger.debug('<<<news_write_prompt>>>\n' + news_write_prompt)
@@ -165,11 +137,6 @@ class Advisor(BaseModel):
         logger.debug('<<<report_write_prompt>>>\n' + report_write_prompt)
         data['save']['report_write_prompt'] = report_write_prompt
         
-        # for report generate
-        if data["trend"] > 0:
-            report_write_prompt_ = "因为未来的实际股票走势良好，建议给出正面评价\n\n" + report_write_prompt
-        else:
-            report_write_prompt_ = "因为未来的实际股票走势不好，建议给出负面评价\n\n" + report_write_prompt
         report_write_prompt_ = report_write_prompt
         
         if "finetune" in self.model_name:

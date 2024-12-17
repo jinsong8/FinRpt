@@ -15,7 +15,7 @@ report = """\n\n\nPlease explore the company's strategic direction and future de
 risk = """\n\nPlease refer to the above semi annual or annual reports, recent stock summary information, and your own knowledge to analyze the potential risk factors that the stock may face. You can refer to the risks mentioned in the semi annual or annual report. Return at least three different risks. Each risk should be condensed into no more than 10 words. \n\nPlease convert your output format to JSON, which can be directly loaded by the json.loads() function: \n {"risks": ["risk 1", "risk 2",..., "risk n"]}"""
 trend = """\n\n\nBased on the above information, please provide investment advice and predict the trend of the company's stock changes in the next three weeks. If the expected increase in the company's stock is higher than the increase in the Shanghai and Shenzhen 300 Index, a 'buy' rating will be given; If it is below, a 'sell' rating will be given. Write a stock research report of no more than 200 words. Please return the following JSON formatted text \n {"Paragraph": "Single paragraph content", "Title": "Concise and appropriate title generated based on paragraph content", "Rating": "Buy/Sell"}\n"""
 
-file_path = '/data/jinsong/FinRpt_v1/dataset/filter_filter_alignment_gpt-4o.jsonl'
+file_path = '/data/name/FinRpt_v1/dataset/filter_filter_alignment_gpt-4o.jsonl'
 gen_reports = open(file_path, 'r').read().split('\n')
 gen_reports = [json.loads(x) for x in gen_reports]
 results_gen_reports = []
@@ -53,8 +53,6 @@ lock = threading.Lock()
 
 progeress_bar = tqdm(total=len(gen_reports))
 
-# translate_row(gen_reports[1], lock, progeress_bar)
-
 with concurrent.futures.ThreadPoolExecutor() as executor:
     futures = [
         executor.submit(translate_row, gen_report, lock, progeress_bar) 
@@ -63,7 +61,7 @@ with concurrent.futures.ThreadPoolExecutor() as executor:
     concurrent.futures.wait(futures)
     
 results_gen_reports_str = [json.dumps(x, ensure_ascii=False) for x in results_gen_reports]    
-with open('/data/jinsong/FinRpt_v1/dataset/en_filter_filter_alignment_gpt-4o.jsonl', 'w') as f:
+with open('/data/name/FinRpt_v1/dataset/en_filter_filter_alignment_gpt-4o.jsonl', 'w') as f:
     f.write("\n".join(results_gen_reports_str))
 
     

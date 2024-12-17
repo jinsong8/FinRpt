@@ -42,7 +42,7 @@ def setup_logger(log_name='finrpt', log_file='finrpt.log'):
     return logger
 
 class FinRpt_analyst_finance:
-    def __init__(self, model_name="gpt-4o", max_rounds=3, language='zh', database_name='/data/jinsong/FinRpt_v1/finrpt/source/cache.db', save_path='./reports'):
+    def __init__(self, model_name="gpt-4o", max_rounds=3, language='zh', database_name='/data/name/FinRpt_v1/finrpt/source/cache.db', save_path='./reports'):
         if "finetune" in model_name:
             real_model_name = model_name
             model_name = 'gpt-4o'
@@ -104,7 +104,6 @@ class FinRpt_analyst_finance:
         data["news"] = self.post_process_news(news)
         data["save"]["news"] = data["news"]
         logger.debug(str(data["news"]))
-        # data["news"] = news
         
         logger.info("Getting report for %s at %s" % (data["company_name"], data["date"]))
         report = self.dataer.get_company_report_em(stock_code=stock_code, date=date)
@@ -118,11 +117,8 @@ class FinRpt_analyst_finance:
                 'stock_code': data['stock_code'],
                 'title': '',
                 'core_content': ''
-                # 'summary': '\n\n'.join([ne['news_time'] + ': ' + ne['news_summary'] for ne in data["news"]])
-                
             }
             print("No report found for this date")
-        # data["report"] = self.post_process_report(report)
         data["report"] = report
         data["save"]["report"] = data["report"]
         logger.debug(str(data["report"]['summary']))
@@ -144,7 +140,6 @@ class FinRpt_analyst_finance:
         data["analyze_news"] = self.news_analyzer.run(data, run_path=run_path)
         
         logger.info("Analyzing financials for %s at %s" % (data["company_name"], data["date"]))
-        # data["analyze_income"], data["analyze_balance"], data["analyze_cash"] = self.financials_analyzer.run(data, run_path=run_path)
         data["analyze_income"] = "季度损益表:\n" + data["financials"]['stock_income'].to_string()
         data["analyze_balance"] = "资产负债表:\n" + data["financials"]['stock_balance_sheet'].to_string()
         data["analyze_cash"] = "现金流量表:\n" + data["financials"]['stock_cash_flow'].to_string()
@@ -161,13 +156,11 @@ class FinRpt_analyst_finance:
         data['report_title'] = data["company_info"]["company_name"] + "研报（" + date + "）"
         
         result_save_path = os.path.join(run_path, 'result.pkl')
-        # json.dump(data['save'], open(result_save_path, 'w'), ensure_ascii=False)
         pickle.dump(data['save'], open(result_save_path, 'wb'))
         
         logger.info("Building report for %s at %s" % (data["company_name"], data["date"]))
         
         logger.info("Trend %s" % (data["trend"]))
-        # build_report(data, date, run_path)
         
     def post_process_news(self, news):
         news, short_ratio = short_eliminate(news)
@@ -191,12 +184,5 @@ class FinRpt_analyst_finance:
         
 if __name__ == '__main__':
     finrpt = FinRpt_analyst_finance(model_name="finetune-qwen")
-    # finrpt = FinRpt(model_name="gpt-4o-mini")
-    # finrpt.run(date='2024-10-28', stock_code='002594.SZ')
-    # finrpt.run(date='2024-10-28', stock_code='600519.SS')
-    # finrpt.run(date='2024-10-28', stock_code='600029.SZ')
-    # finrpt.run(date='2024-10-28', stock_code='600941.SS')
-    # finrpt.run(date='2024-10-08', stock_code='000002.SZ')
-    # TODO: debug for report not found
     finrpt.run(date='2024-11-05', stock_code='600519.SS')
     

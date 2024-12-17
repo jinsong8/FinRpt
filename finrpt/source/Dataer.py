@@ -34,14 +34,13 @@ from finrpt.source.database_insert import (
 from finrpt.source.database_query import company_news_table_query_by_url, announcement_table_query_by_url
 
 class Dataer:
-    def __init__(self, max_retry=1, database_name = '/data/jinsong/FinRpt_v1/finrpt/source/cache.db', model_name = 'gpt-4o-mini'):
+    def __init__(self, max_retry=1, database_name = '/data/name/FinRpt_v1/finrpt/source/cache.db', model_name = 'gpt-4o-mini'):
         self.max_retry = max_retry
         self.database_name = database_name
         self.model = OpenAIModel(model_name=model_name)
         self._init_db()
 
     def _init_db(self):
-        # create table for company info
         company_info_table_init(self.database_name)
         company_report_table_init(self.database_name)
         announcement_table_init(self.database_name)
@@ -446,16 +445,6 @@ class Dataer:
             "SS": "sh",
             "SZ": "sz"
         }
-        
-        # # for report generate
-        # try:
-        #     conn = sqlite3.connect(self.database_name)
-        #     c = conn.cursor()
-        #     c.execute('''SELECT * FROM newsdup WHERE id=?''', (f"{stock_code}_{end_date}",))
-        #     result = c.fetchone()
-        #     return pickle.loads(result[1])
-        # except Exception as e:
-        #     return None
       
 
         def _get_news_from_url(url):
@@ -481,7 +470,6 @@ class Dataer:
                         one_news = ann_data.xpath('string()').strip().split('\n\n')[0].strip()
                         one_news = one_news.split('\t\t')[0]
                     except Exception as e:
-                        # print(e)
                         one_news = None
             except Exception as e:
                 print(e)
@@ -496,7 +484,7 @@ class Dataer:
         # try:
         #     conn = sqlite3.connect(self.database_name)
         #     c = conn.cursor()
-        #     c.execute('''SELECT * FROM newsduped WHERE stock_code = ? AND news_time BETWEEN ? and ? ''', (stock_code, start_date, end_date))
+        #     c.execute('''SELECT * FROM newsemb WHERE stock_code = ? AND news_time BETWEEN ? and ? ''', (stock_code, start_date, end_date))  
         #     results = c.fetchall()
         #     resutls_list = []
         #     for row in results:
@@ -511,37 +499,12 @@ class Dataer:
         #             "news_content":row[7],
         #             "news_summary":row[8],
         #             "dec_response":row[9],
-        #             "news_decision":row[10]
+        #             "news_decision":row[10],
+        #             "news_embedding":pickle.loads(row[11]),
         #         })
         #     return resutls_list
         # except Exception as e:
-        #     return None
-            
-        # for report generate
-        try:
-            conn = sqlite3.connect(self.database_name)
-            c = conn.cursor()
-            c.execute('''SELECT * FROM newsemb WHERE stock_code = ? AND news_time BETWEEN ? and ? ''', (stock_code, start_date, end_date))  
-            results = c.fetchall()
-            resutls_list = []
-            for row in results:
-                resutls_list.append({
-                    "news_url":row[0],
-                    "read_num":row[1],
-                    "reply_num":row[2],
-                    "news_title":row[3],
-                    "news_author":row[4],
-                    "news_time":row[5],
-                    "stock_code":row[6],
-                    "news_content":row[7],
-                    "news_summary":row[8],
-                    "dec_response":row[9],
-                    "news_decision":row[10],
-                    "news_embedding":pickle.loads(row[11]),
-                })
-            return resutls_list
-        except Exception as e:
-            return []
+        #     return []
             
         result = []
         stock = stock_map[stock_code[-2:]] + stock_code[:-3]
@@ -576,7 +539,7 @@ class Dataer:
                 
                 query_result = content = company_news_table_query_by_url(db=self.database_name, news_url=link)
                 if content is None:
-                    continue # for report generate
+                    # continue # for report generate
                     content = _get_news_from_url(link)
                     if content is None:
                         continue
@@ -677,22 +640,22 @@ class Dataer:
             start_date = start_date.strftime("%Y-%m-%d")
             
         # for report generate
-        try:
-            conn = sqlite3.connect(self.database_name)
-            c = conn.cursor()
-            c.execute(f"SELECT * FROM financials WHERE id='{stock_code}_{end_date}'")
-            result_raw = c.fetchone()
-            result = {
-                "stock_info": pickle.loads(pickle.loads(result_raw[1])),
-                "stock_data": pickle.loads(pickle.loads(result_raw[2])),
-                "stock_income": pickle.loads(pickle.loads(result_raw[3])),
-                "stock_balance_sheet": pickle.loads(pickle.loads(result_raw[4])),
-                "stock_cash_flow": pickle.loads(pickle.loads(result_raw[5])),
-                "csi300_stock_data": pickle.loads(pickle.loads(result_raw[6]))
-            }
-            return result
-        except Exception as e:
-            return None
+        # try:
+        #     conn = sqlite3.connect(self.database_name)
+        #     c = conn.cursor()
+        #     c.execute(f"SELECT * FROM financials WHERE id='{stock_code}_{end_date}'")
+        #     result_raw = c.fetchone()
+        #     result = {
+        #         "stock_info": pickle.loads(pickle.loads(result_raw[1])),
+        #         "stock_data": pickle.loads(pickle.loads(result_raw[2])),
+        #         "stock_income": pickle.loads(pickle.loads(result_raw[3])),
+        #         "stock_balance_sheet": pickle.loads(pickle.loads(result_raw[4])),
+        #         "stock_cash_flow": pickle.loads(pickle.loads(result_raw[5])),
+        #         "csi300_stock_data": pickle.loads(pickle.loads(result_raw[6]))
+        #     }
+        #     return result
+        # except Exception as e:
+        #     return None
             
             
             
@@ -710,7 +673,6 @@ class Dataer:
         stock_info = ak.stock_individual_info_em(symbol=stock_code[:-3])
         stock_info = stock_info.set_index('item')['value'].to_dict()
         
-        # stock_data = ak.stock_zh_a_daily(symbol=stock_code_zh, start_date=start_date_zh, end_date=end_date_zh)
         stock_data = ak.stock_zh_a_hist_tx(symbol=stock_code_zh, start_date=start_date_zh, end_date=end_date_zh)
         stock_data = stock_data.rename(columns={'open': 'Open', 'close': 'Close', 'high': 'High', 'low': 'Low', 'volume': 'Volume'})
         

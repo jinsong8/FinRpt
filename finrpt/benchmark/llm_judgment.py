@@ -1,7 +1,3 @@
-"""
-Usage:
-python gen_judgment.py --model-list [LIST-OF-MODEL-ID] --parallel [num-concurrent-api-call] --mode [single|pairwise-baseline|pairwise-all]
-"""
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 import json
@@ -81,52 +77,6 @@ def get_model_list(answer_dir):
     file_names = [os.path.splitext(os.path.basename(f))[0] for f in file_paths]
     return file_names
 
-
-# def run_judge_pair(question_id, answer_a, answer_b, judge_model):
-#     kwargs = {}
-#     model = judge_model
-    
-#     prompt_template = """请担任公正的裁判，评估由两个AI助手生成的股票研究报告的质量。每份报告都是基于一个给定的股票代码和分析日期创建的。您的任务是选择哪个助手更有效地提供了一份满足用户要求的报告。考虑因素包括：有用性、数据准确性、财务分析的深度、新闻分析的相关性和覆盖度、对市场趋势和行业状况的理解、投资建议是否基于全面和理性的分析、是否全面地分析了投资该股票的潜在风险、整体连贯性、可读性和逻辑性。开始您的评估，通过比较这两份报告并提供简明的解释您的决定。避免任何立场偏见，确保不会因报告呈现的顺序而影响您的判断。不要让报告的长度影响您的决定。客观评估，在提供理由之后，按照以下格式确定更好的报告：如果助手A的报告更优，使用“[[A]]”；如果助手B的报告更优，使用“[[B]]”；若两者相当，使用“[[C]]”。
-# [用户要求] 
-# 为{report_stock}在{date}生成一份股票研究报告。 
-
-# [助手A的股票研究报告开始]
-# {report_a} 
-# [助手A的股票研究报告结束] 
-
-# [助手B的股票研究报告开始] 
-# {report_b} 
-# [助手B的股票研究报告结束]"""
-
-#     prompt_template_en = ""
-    
-#     stock_code, date = question_id.split("_")
-#     report_a = '\n'.join([answer_a['finance_write_response'],answer_a['news_write_response'],answer_a['report_write_response'],answer_a['trend_write_response'], answer_a['risk_response']])
-#     report_b = '\n'.join([answer_b['finance_write_response'],answer_b['news_write_response'],answer_b['report_write_response'],answer_b['trend_write_response'], answer_b['risk_response']])
-#     user_prompt = prompt_template.format(
-#         report_stock=stock_code,
-#         date=date,
-#         report_a=report_a,
-#         report_b=report_b,
-#     )
-
-#     winner = "error"
-    
-#     model = OpenAIModel(model_name=judge_model)
-#     judgment = model.simple_prompt(user_prompt)[0]
-
-#     if "[[A]]" in judgment:
-#         winner = "A"
-#     elif "[[B]]" in judgment:
-#         winner = "B"
-#     elif "[[C]]" in judgment:
-#         winner = "tie"
-#     else:
-#         winner = "error"
-
-#     return winner, user_prompt, judgment
-
-
 def run_judge_pair(question_id, answer_a, answer_b, judge_model):
     metrics = ["数据准确性、财务分析的深度", "新闻分析的相关性和覆盖度", "对公司管理与发展、市场趋势和行业状况的理解", "投资建议是否基于全面和理性的分析", "是否全面地分析了投资该股票的潜在风险", "整体连贯性、可读性和逻辑性"]
     model = judge_model
@@ -196,44 +146,6 @@ def run_judge_pair(question_id, answer_a, answer_b, judge_model):
     return winners, user_prompts, judgments
 
 
-# def run_judge_single(question_id, answer, judge_model):
-#     kwargs = {}
-#     model = judge_model
-
-#     rating = -1
-
-#     system_prompt = judge.prompt_template["system_prompt"]
-#     conv = get_conversation_template(model)
-#     conv.set_system_message(system_prompt)
-#     conv.append_message(conv.roles[0], user_prompt)
-#     conv.append_message(conv.roles[1], None)
-
-#     if model in OPENAI_MODEL_LIST:
-#         judgment = chat_completion_openai(model, conv, temperature=0, max_tokens=2048)
-#     elif model in ANTHROPIC_MODEL_LIST:
-#         judgment = chat_completion_anthropic(
-#             model, conv, temperature=0, max_tokens=1024
-#         )
-#     else:
-#         raise ValueError(f"Invalid judge model name: {model}")
-
-#     if judge.prompt_template["output_format"] == "[[rating]]":
-#         match = re.search(one_score_pattern, judgment)
-#         if not match:
-#             match = re.search(one_score_pattern_backup, judgment)
-
-#         if match:
-#             rating = ast.literal_eval(match.groups()[0])
-#         else:
-#             rating = -1
-#     else:
-#         raise ValueError(
-#             f"invalid output format: {judge.prompt_template['output_format']}"
-#         )
-
-#     return rating, user_prompt, judgment
-
-
 def make_match(
     questions,
     models,
@@ -294,140 +206,6 @@ def make_match_single(
     return matches
 
 
-# def make_judge_pairwise(judge_model, judge_prompts):
-#     judges = {}
-#     judges["default"] = Judge(judge_model, judge_prompts["pair-v2"])
-#     judges["math"] = Judge(judge_model, judge_prompts["pair-math-v1"], ref_based=True)
-#     judges["default-mt"] = Judge(
-#         judge_model, judge_prompts["pair-v2-multi-turn"], multi_turn=True
-#     )
-#     judges["math-mt"] = Judge(
-#         judge_model,
-#         judge_prompts["pair-math-v1-multi-turn"],
-#         ref_based=True,
-#         multi_turn=True,
-#     )
-#     return judges
-
-
-# def play_a_match_single(match: MatchSingle, output_file: str):
-#     question_id, model, answer, judge_model = (
-#         match.question_id,
-#         match.model,
-#         match.answer,
-#         match.judge_model
-#     )
-
-#     score, user_prompt, judgment = run_judge_single(question_id, answer, judge_model)
-
-#     result = {
-#         "question_id": question_id,
-#         "model": model,
-#         "user_prompt": user_prompt,
-#         "judgment": judgment,
-#         "score": score,
-#         "tstamp": time.time(),
-#     }
-#     print(
-#         f"question: {question_id}, model: {model}, "
-#         f"score: {score}, "
-#     )
-        
-#     if output_file:
-#         os.makedirs(os.path.dirname(output_file), exist_ok=True)
-#         with open(output_file, "a") as fout:
-#             fout.write(json.dumps(result) + "\n")
-
-#     return result
-
-
-# def play_a_match_pair(match: MatchPair, output_file: str):
-#     question_id, model_1, model_2, answer_1, answer_2, judge_model = (
-#         match.question_id,
-#         match.model_1,
-#         match.model_2,
-#         match.answer_1,
-#         match.answer_2,
-#         match.judge_model
-#     )
-
-#     g1_winner, g1_user_prompt, g1_judgments = run_judge_pair(question_id, answer_1, answer_2, judge_model)
-#     g2_winner, g2_user_prompt, g2_judgments = run_judge_pair(question_id, answer_2, answer_1, judge_model)
-
-#     g1_map = {"A": "model_1", "B": "model_2"}
-#     g2_map = {"A": "model_2", "B": "model_1"}
-#     g1_winner = g1_map.get(g1_winner, g1_winner)
-#     g2_winner = g2_map.get(g2_winner, g2_winner)
-
-#     result = {
-#         "question_id": question_id,
-#         "model_1": model_1,
-#         "model_2": model_2,
-#         "g1_winner": g1_winner,
-#         "g2_winner": g2_winner,
-#         "g1_user_prompt": g1_user_prompt,
-#         "g1_judgment": g1_judgments,
-#         "g2_user_prompt": g2_user_prompt,
-#         "g2_judgment": g2_judgments,
-#         "tstamp": time.time(),
-#     }
-
-#     print(
-#         f"question: {question_id}, model_1: {model_1}, model_2: {model_2}, "
-#         f"g1_winner: {g1_winner}, g2_winner: {g2_winner}, "
-#     )
-
-#     if output_file:
-#         os.makedirs(os.path.dirname(output_file), exist_ok=True)
-#         with open(output_file, "a") as fout:
-#             fout.write(json.dumps(result, ensure_ascii=False) + "\n")
-
-#     return result
-
-
-# def play_a_match_pair(match: MatchPair, output_file: str):
-#     question_id, model_1, model_2, answer_1, answer_2, judge_model = (
-#         match.question_id,
-#         match.model_1,
-#         match.model_2,
-#         match.answer_1,
-#         match.answer_2,
-#         match.judge_model
-#     )
-
-#     g1_winner, g1_user_prompt, g1_judgment = run_judge_pair(question_id, answer_1, answer_2, judge_model)
-#     g2_winner, g2_user_prompt, g2_judgment = run_judge_pair(question_id, answer_2, answer_1, judge_model)
-
-#     g1_map = {"A": "model_1", "B": "model_2"}
-#     g2_map = {"A": "model_2", "B": "model_1"}
-#     g1_winner = g1_map.get(g1_winner, g1_winner)
-#     g2_winner = g2_map.get(g2_winner, g2_winner)
-
-#     result = {
-#         "question_id": question_id,
-#         "model_1": model_1,
-#         "model_2": model_2,
-#         "g1_winner": g1_winner,
-#         "g2_winner": g2_winner,
-#         "g1_user_prompt": g1_user_prompt,
-#         "g1_judgment": g1_judgment,
-#         "g2_user_prompt": g2_user_prompt,
-#         "g2_judgment": g2_judgment,
-#         "tstamp": time.time(),
-#     }
-
-#     print(
-#         f"question: {question_id}, model_1: {model_1}, model_2: {model_2}, "
-#         f"g1_winner: {g1_winner}, g2_winner: {g2_winner}, "
-#     )
-
-#     if output_file:
-#         os.makedirs(os.path.dirname(output_file), exist_ok=True)
-#         with open(output_file, "a") as fout:
-#             fout.write(json.dumps(result, ensure_ascii=False) + "\n")
-
-#     return result
-
 def play_a_match_pair(match: MatchPair, output_file: str):
     question_id, model_1, model_2, answer_1, answer_2, judge_model = (
         match.question_id,
@@ -477,22 +255,6 @@ def play_a_match_pair(match: MatchPair, output_file: str):
             fout.write(json.dumps(result, ensure_ascii=False) + "\n")
 
     return result
-
-
-# def make_judge_single(judge_model, judge_prompts):
-#     judges = {}
-#     judges["default"] = Judge(judge_model, judge_prompts["single-v1"])
-#     judges["math"] = Judge(judge_model, judge_prompts["single-math-v1"], ref_based=True)
-#     judges["default-mt"] = Judge(
-#         judge_model, judge_prompts["single-v1-multi-turn"], multi_turn=True
-#     )
-#     judges["math-mt"] = Judge(
-#         judge_model,
-#         judge_prompts["single-math-v1-multi-turn"],
-#         ref_based=True,
-#         multi_turn=True,
-#     )
-#     return judges
 
 
 if __name__ == "__main__":

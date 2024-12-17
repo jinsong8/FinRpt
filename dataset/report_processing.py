@@ -21,7 +21,6 @@ def get_lastEmRatingName(data):
     return lastEmRatingName
 
 def filter_by_lastEmRatingName(data, lastEmRatingName):
-    # ['', '中性', '增持', '买入', '持有']
     filtered_data = [d for d in data if d['lastEmRatingName'] in lastEmRatingName]
     return filtered_data
 
@@ -95,21 +94,6 @@ def check_by_id(data):
 
 if __name__ == '__main__':
     data = []
-    # with open('./data/eastmoney_single_reporter_all.jsonl', encoding='utf-8') as f:
-    #     for line in f:
-    #         data.append(json.loads(line))
-    # print('raw len: ', len(data))
-    # data = del_blank(data)
-    # print('after del blank len: ', len(data))
-    # data = filter_by_date(data, '2024-08-28', '2024-11-05')
-    # print('after filter by date len: ', len(data))
-    # data = filter_by_csi300_and_csi500(data)
-    # print('after filter by csi300_and_csi500 len: ', len(data))
-    # data = sorted(data, key=lambda x: x['publishDate'])
-    # with open('./data/csi300_csi500_report_9-11.jsonl', 'w', encoding='utf-8') as f:
-    #     for d in data:
-    #         f.write(json.dumps(d, ensure_ascii=False) + '\n')
-    
     with open('./data/csi300_csi500_report_9-11.jsonl', encoding='utf-8') as f:
         for line in f:
             data.append(json.loads(line))
@@ -121,8 +105,6 @@ if __name__ == '__main__':
         data_sub = filter_by_lastEmRatingName(data, [lastEmRatingName])
         print('after filter by lastEmRatingName {} len: '.format(lastEmRatingName), len(data_sub))
         
-    # check_by_date_stock_code(data)
-    # check_by_id(data)
     
     
             

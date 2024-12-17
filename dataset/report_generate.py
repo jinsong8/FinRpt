@@ -96,7 +96,7 @@ def get_news_embeddings():
             print(e)
             return False
     
-    database_name = '/data/jinsong/FinRpt_v1/finrpt/source/cache.db'
+    database_name = '/data/name/FinRpt_v1/finrpt/source/cache.db'
     
     company_newsemb_table_init(database_name)
     
@@ -138,7 +138,7 @@ def get_dup_news_async():
     stock_list_csi500 = open('csi500.txt', 'r').read().split('\n')
     stock_list = stock_list_csi300 + stock_list_csi500
     date_list = ['2024-11-05', '2024-10-29', '2024-10-22', '2024-10-15', '2024-10-08', '2024-10-01', '2024-09-24', '2024-09-17', '2024-09-10', '2024-09-03']
-    database_name = '/data/jinsong/FinRpt_v1/finrpt/source/cache.db'      
+    database_name = '/data/name/FinRpt_v1/finrpt/source/cache.db'      
     
     def company_newsdup_table_init(db):
         conn = sqlite3.connect(db)
@@ -213,7 +213,6 @@ def get_dup_news_async():
                     "news_decision":row[10],
                     "news_embedding":pickle.loads(row[11]),
                 })
-            # print(f"{stock_code} {date} raw: {len(resutls_list)}")
         except Exception as e:
             print(e)
             return False
@@ -221,10 +220,8 @@ def get_dup_news_async():
         news = resutls_list
         news, short_ratio = short_eliminate(news)
         news, bert_ratio = duplication_eliminate_bert(news)
-        # print(f"{stock_code} {date} bert: {len(news)}")
         news, hash_raito = duplication_eliminate_hash(news)
         news, date_ratio = filter_news_by_date(news)
-        # print(f"{stock_code} {date} date: {len(news)}")
         news_url = [x['news_url'] for x in news]
         with lock:
             conn = sqlite3.connect(database_name)
@@ -245,7 +242,6 @@ def get_dup_news_async():
     
     progress_bar = tqdm(total=len(re_param))
     
-    # _get_dup_news_row('600519.SS', '2024-11-05', lock, progress_bar)
     
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [
@@ -259,7 +255,7 @@ def get_duped_news_async():
     stock_list_csi500 = open('csi500.txt', 'r').read().split('\n')
     stock_list = stock_list_csi300 + stock_list_csi500
     date_list = ['2024-11-05', '2024-10-29', '2024-10-22', '2024-10-15', '2024-10-08', '2024-10-01', '2024-09-24', '2024-09-17', '2024-09-10', '2024-09-03']
-    database_name = '/data/jinsong/FinRpt_v1/finrpt/source/cache.db'      
+    database_name = '/data/name/FinRpt_v1/finrpt/source/cache.db'      
     
     def company_newsduped_table_init(db):
         conn = sqlite3.connect(db)
@@ -383,7 +379,6 @@ def get_duped_news_async():
                     "news_decision":row[10],
                     "news_embedding":pickle.loads(row[11]),
                 })
-            # print(f"{stock_code} {date} raw: {len(resutls_list)}")
         except Exception as e:
             print(e)
             return False
@@ -391,10 +386,8 @@ def get_duped_news_async():
         news = resutls_list
         news, short_ratio = short_eliminate(news)
         news, bert_ratio = duplication_eliminate_bert(news)
-        # print(f"{stock_code} {date} bert: {len(news)}")
         news, hash_raito = duplication_eliminate_hash(news)
         news, date_ratio = filter_news_by_date(news)
-        # print(f"{stock_code} {date} date: {len(news)}")
         for new in news:
             with lock:
                 company_newsduped_table_insert(database_name, new)
@@ -414,8 +407,6 @@ def get_duped_news_async():
     
     progress_bar = tqdm(total=len(re_param))
     
-    # _get_duped_news_row('600519.SS', '2024-11-05', lock, progress_bar)
-    
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [
             executor.submit(_get_duped_news_row, stock_code, date, lock, progress_bar) 
@@ -431,7 +422,7 @@ def get_financials_async():
 
     date_list = ['2024-11-05', '2024-10-29', '2024-10-22', '2024-10-15', '2024-10-08', '2024-10-01', '2024-09-24', '2024-09-17', '2024-09-10', '2024-09-03']
     
-    database_name = '/data/jinsong/FinRpt_v1/finrpt/source/cache.db'
+    database_name = '/data/name/FinRpt_v1/finrpt/source/cache.db'
     
     def _financials_table_init(db):
         conn = sqlite3.connect(db)
@@ -510,9 +501,7 @@ def get_financials_async():
         """
         symbol_map = {"资产负债表": "fzb", "利润表": "lrb", "现金流量表": "llb"}
         url = f"https://quotes.sina.cn/cn/api/openapi.php/CompanyFinanceService.getFinanceReport2022?paperCode={stock}&source={symbol_map[symbol]}&type=0&page=1&num=100"
-        # pdb.set_trace()
         r = _request_get(url)
-        # pdb.set_trace()
         data_json = r.json()
         df_columns = [
             item["date_value"] for item in data_json["result"]["data"]["report_date"]
@@ -555,7 +544,6 @@ def get_financials_async():
         big_df = big_df.T
         big_df.columns = temp_df["项目"]
         big_df = pd.concat(objs=[pd.DataFrame({"报告日": df_columns}), big_df], axis=1)
-        # 此处有 '国内票证结算' 和 '内部应收款'字段重复
         big_df = big_df.loc[:, ~big_df.columns.duplicated(keep="first")]
         return big_df
     
@@ -593,7 +581,6 @@ def get_financials_async():
         stock_info = ak.stock_individual_info_em(symbol=stock_code[:-3])
         stock_info = stock_info.set_index('item')['value'].to_dict()
         
-        # stock_data = ak.stock_zh_a_daily(symbol=stock_code_zh, start_date=start_date_zh, end_date=end_date_zh)
         stock_data = ak.stock_zh_a_hist_tx(symbol=stock_code_zh, start_date=start_date_zh, end_date=end_date_zh)
         stock_data = stock_data.rename(columns={'open': 'Open', 'close': 'Close', 'high': 'High', 'low': 'Low', 'volume': 'Volume'})
         
@@ -647,7 +634,6 @@ def get_financials_async():
         # Operating Profit Margin
         stock_income['营业利润率'] = stock_income['营业利润'] / stock_income['营业总收入'] * 100
         # Net Profit Margin
-        # stock_income['净利润率'] = stock_income['净利润'] / stock_income['营业总收入'] * 100
         stock_income = stock_income[(stock_income['报告日'] >= start_date_report_zh) & (stock_income['报告日'] <= end_date_zh)]
         # date
         stock_income['报告日'] = pd.to_datetime(stock_income['报告日'], format='%Y%m%d')
@@ -762,7 +748,6 @@ def get_financials_async():
         stock_info = ak.stock_individual_info_em(symbol=stock_code[:-3])
         stock_info = stock_info.set_index('item')['value'].to_dict()
         
-        # stock_data = ak.stock_zh_a_daily(symbol=stock_code_zh, start_date=start_date_zh, end_date=end_date_zh)
         stock_data = ak.stock_zh_a_hist_tx(symbol=stock_code_zh, start_date=start_date_zh, end_date=end_date_zh)
         stock_data = stock_data.rename(columns={'open': 'Open', 'close': 'Close', 'high': 'High', 'low': 'Low', 'volume': 'Volume'})
         
@@ -790,128 +775,6 @@ def get_financials_async():
             _financials_table_insert(database_name, result)
             print(f"{stock_code} {end_date}")
         return result
-        
-        income_key = [
-            "报告日",
-            "营业总收入",
-            "营业总成本",
-            "营业利润",
-            "净利润",
-            "基本每股收益",
-            "稀释每股收益",
-            "投资收益",
-        ]
-        income_rename_dict = {
-            "营业收入": "营业总收入",
-            "营业支出": "营业总成本"
-        }
-        income = stock_financial_report_sina(stock=stock_code_zh, symbol="利润表")
-        income = income.rename(columns={k: v for k, v in income_rename_dict.items() if k in income.columns and v not in income.columns})
-        stock_income = income[income_key]
-        
-        # qoq
-        quarter_over_quarter = [] 
-        for i in range(0, len(stock_income) - 1):
-            prev_value = stock_income['营业总收入'].iloc[i + 1]
-            current_value = stock_income['营业总收入'].iloc[i]
-            growth = (current_value - prev_value) / prev_value * 100
-            quarter_over_quarter.append(growth)
-        quarter_over_quarter += [None]
-        stock_income['收入环比增长率'] = quarter_over_quarter
-        # yoy
-        year_over_year = [] 
-        for i in range(0, len(stock_income) - 4):
-            prev_value = stock_income['营业总收入'].iloc[i + 4]
-            current_value = stock_income['营业总收入'].iloc[i]
-            growth = (current_value - prev_value) / prev_value * 100
-            year_over_year.append(growth)
-        year_over_year += [None, None, None, None]
-        stock_income['收入同比增长率'] = year_over_year
-        # Gross Profit Margin
-        stock_income['毛利率'] = (stock_income['营业总收入'] - stock_income['营业总成本']) / stock_income['营业总收入'] * 100
-        # Operating Profit Margin
-        stock_income['营业利润率'] = stock_income['营业利润'] / stock_income['营业总收入'] * 100
-        # Net Profit Margin
-        stock_income['净利润率'] = stock_income['净利润'] / stock_income['营业总收入'] * 100
-        stock_income = stock_income[(stock_income['报告日'] >= start_date_report_zh) & (stock_income['报告日'] <= end_date_zh)]
-        # date
-        stock_income['报告日'] = pd.to_datetime(stock_income['报告日'], format='%Y%m%d')
-        stock_income['报告日'] = stock_income['报告日'].dt.strftime('%Y-%m-%d')
-        stock_income = stock_income.rename(columns={'报告日': '日期'})
-        
-        balance_key = [
-            '报告日',
-            '流动资产合计',
-            '非流动资产合计',
-            '货币资金',
-            '应收账款',
-            '存货',
-            '固定资产净值',
-            '商誉',
-            '流动负债合计',
-            '非流动负债合计',
-            '短期借款',
-            '长期借款',
-            '应付账款',
-            '所有者权益',
-            '未分配利润',
-            '负债合计',
-            '所有者权益(或股东权益)合计',
-            '资产总计',
-            '负债和所有者权益(或股东权益)总计'
-        ]
-        balance = stock_financial_report_sina(stock=stock_code_zh, symbol="资产负债表")
-        balance_key_copy = []
-        for me in balance_key:
-            if me in balance.columns:
-                balance_key_copy.append(me)
-        balance_key = balance_key_copy
-        stock_balance_sheet = balance[balance_key]
-        stock_balance_sheet['长期债务比率'] = stock_balance_sheet['长期借款'] / stock_balance_sheet['负债合计'] * 100
-        stock_balance_sheet = stock_balance_sheet[(stock_balance_sheet['报告日'] >= start_date_report_zh) & (stock_balance_sheet['报告日'] <= end_date_zh)]
-        stock_balance_sheet['报告日'] = pd.to_datetime(stock_balance_sheet['报告日'], format='%Y%m%d')
-        stock_balance_sheet['报告日'] = stock_balance_sheet['报告日'].dt.strftime('%Y-%m-%d')
-        stock_balance_sheet = stock_balance_sheet.rename(columns={'报告日': '日期'})
-        
-        cash_flow_key = [
-            '报告日',
-            '经营活动产生的现金流量净额',
-            '投资活动产生的现金流量净额',
-            '筹资活动产生的现金流量净额',
-            '现金及现金等价物净增加额',
-            '收回投资所收到的现金',
-            '取得投资收益收到的现金',
-            '购建固定资产、无形资产和其他长期资产所支付的现金',
-            '吸收投资收到的现金',
-            '取得借款收到的现金',
-            '偿还债务支付的现金',
-            '分配股利、利润或偿付利息所支付的现金'
-        ]
-        cash_flow = stock_financial_report_sina(stock=stock_code_zh, symbol="现金流量表")
-        cash_flow_key_copy = []
-        for me in cash_flow_key:
-            if me in cash_flow.columns:
-                cash_flow_key_copy.append(me)
-        cash_flow_key = cash_flow_key_copy
-        stock_cash_flow = cash_flow[cash_flow_key]
-        stock_cash_flow = stock_cash_flow[(stock_cash_flow['报告日'] >= start_date_report_zh) & (stock_cash_flow['报告日'] <= end_date_zh)]
-        stock_cash_flow['报告日'] = pd.to_datetime(stock_cash_flow['报告日'], format='%Y%m%d')
-        stock_cash_flow['报告日'] = stock_cash_flow['报告日'].dt.strftime('%Y-%m-%d')
-        stock_cash_flow = stock_cash_flow.rename(columns={'报告日': '日期'})
-        
-        result = {
-            "id": f"{stock_code}_{end_date}",
-            "stock_info": pickle.dumps(stock_info),
-            "stock_data": pickle.dumps(stock_data),
-            "stock_income": pickle.dumps(stock_income),
-            "stock_balance_sheet": pickle.dumps(stock_balance_sheet),
-            "stock_cash_flow": pickle.dumps(stock_cash_flow),
-            "csi300_stock_data": pickle.dumps(csi300_stock_data)
-        }
-        with lock:
-            _financials_table_insert(database_name, result)
-            print(f"{stock_code} {end_date}")
-        return result
     
     _financials_table_init(database_name)
     
@@ -925,7 +788,6 @@ def get_financials_async():
     
     progress_bar = tqdm(total=len(re_param))
     
-    # results = _get_finacncials_ak("600901.SS", "2024-09-03", lock, progress_bar)
     
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [
@@ -933,14 +795,7 @@ def get_financials_async():
             for stock_code, date in re_param
         ]
         concurrent.futures.wait(futures)
-    
-    # for stock_code, date in tqdm(re_param):
-    #     # try:
-    #     #     _get_finacncials_ak(stock_code, date, lock)
-    #     # except Exception as e:
-    #     #     print(e)
-    #     _get_finacncials_ak(stock_code, date, lock)
-    #     time.sleep(0.3)
+
     
 def get_trend_async():
     
@@ -948,7 +803,7 @@ def get_trend_async():
     stock_list_csi_500 = open('csi500.txt', 'r').read().split('\n')
     date_list = ['2024-11-05', '2024-10-29', '2024-10-22', '2024-10-15', '2024-10-08', '2024-10-01', '2024-09-24', '2024-09-17', '2024-09-10', '2024-09-03']
     stock_list = stock_list_csi_300 + stock_list_csi_500
-    database_name = '/data/jinsong/FinRpt_v1/finrpt/source/cache.db'
+    database_name = '/data/name/FinRpt_v1/finrpt/source/cache.db'
     
     def _trend_table_init(db):
         conn = sqlite3.connect(db)
@@ -1041,8 +896,6 @@ def get_trend_async():
             
         lock = threading.Lock()
         
-        # _get_trend_row('601211.SS', date, end_date, before_date, csi300_change,lock, tqdm_bar) 
-        
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [
                 executor.submit(_get_trend_row, stock_code, date, end_date, before_date, csi300_change, lock, tqdm_bar) 
@@ -1055,7 +908,7 @@ def run_report_em_download_async(model_name):
     stock_list_csi_500 = open('csi500.txt', 'r').read().split('\n')
     stock_list = stock_list_csi_300 + stock_list_csi_500
     
-    database_name = '/data/jinsong/FinRpt_v1/finrpt/source/cache.db'
+    database_name = '/data/name/FinRpt_v1/finrpt/source/cache.db'
     
     def _request_get(url, headers = None, verify = None, params = None):
         if headers is None:
@@ -1223,8 +1076,6 @@ def run_report_em_download_async(model_name):
     
     progress_bar = tqdm(total=len(stock_list))
 
-    # get_company_report_em('2024-11-25', stock_list[0], lock)
-
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [
             executor.submit(get_company_report_em, '2024-11-25', stock_code, lock, progress_bar) 
@@ -1240,9 +1091,8 @@ def report_generate_async(model_name):
     stock_list = stock_list_csi300 + stock_list_csi500
 
     date_list = ['2024-11-05', '2024-10-29', '2024-10-22', '2024-10-15', '2024-10-08', '2024-10-01', '2024-09-24', '2024-09-17', '2024-09-10', '2024-09-03']
-    # date_list = ['2024-10-29', '2024-10-22', '2024-10-15', '2024-10-08', '2024-10-01', '2024-09-24', '2024-09-17', '2024-09-10', '2024-09-03']
     
-    database_name = '/data/jinsong/FinRpt_v1/finrpt/source/cache.db'
+    database_name = '/data/name/FinRpt_v1/finrpt/source/cache.db'
     
     def report_generate_row(stock_code, date, lock, progress_bar):
         finrpt = FinRpt(model_name=model_name)
@@ -1258,15 +1108,12 @@ def report_generate_async(model_name):
     lock = threading.Lock()
     
     progeress_bar = tqdm(total=len(re_param))
-    
-    # report_generate_row('000063.SZ', '2024-09-24', lock)
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [
             executor.submit(report_generate_row, stock_code, date, lock, progeress_bar) 
             for stock_code, date in re_param[3000:4000]
         ]
-        # 4000-7000, 7000-8000
         concurrent.futures.wait(futures)
     return 
 
@@ -1275,10 +1122,3 @@ def report_generate_async(model_name):
 
 if __name__ == "__main__":
     report_generate_async("gpt-4o")
-    # get_news_embeddings()
-    # get_financials_async()
-    # get_trend_async()
-    # get_duped_news_async()
-    # run_report_em_download_async('gpt-4o-mini')
-    # get_dup_news_async()
-    # print(get_report_by_id('600519.SS_2024-11-05'))

@@ -37,12 +37,7 @@ class Predictor(BaseModel):
                   "最近一个月该股票公司历史价格：" + stock_price +  "\n\n\n" + PROMPT_TREND
         logger.debug('<<<trend_write_prompt>>>\n' + trend_write_prompt)
         data['save']['trend_write_prompt'] = trend_write_prompt
-        
-        # for report generate
-        if data["trend"] > 0:
-            trend_write_prompt_ = "因为未来的实际股票走势良好，建议给出正面评价\n\n" + trend_write_prompt
-        else:
-            trend_write_prompt_ = "因为未来的实际股票走势不好，建议给出负面评价\n\n" + trend_write_prompt
+
         trend_write_prompt_ = trend_write_prompt
         
         if "finetune" in self.model_name:

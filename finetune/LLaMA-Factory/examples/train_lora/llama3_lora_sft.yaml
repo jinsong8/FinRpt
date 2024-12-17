@@ -1,5 +1,5 @@
 ### model
-model_name_or_path: /data/jinsong/FinRpt_v1/finetune/model_hub/LLM-Research/Meta-Llama-3___1-8B-Instruct
+model_name_or_path: /data/name/FinRpt_v1/finetune/model_hub/LLM-Research/Meta-Llama-3___1-8B-Instruct
 
 ### method
 stage: sft
