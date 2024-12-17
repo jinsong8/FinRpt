@@ -2,13 +2,6 @@
 
 >While LLMs have shown great success in financial tasks like stock prediction and question answering, their application in fully automating Equity Research Report generation remains uncharted territory. In this paper, we formulate the Equity Research Report (ERR) Generation task for the first time. To address the data scarcity and the evaluation metrics absence, we present an open-source evaluation benchmark for ERR generation - FinRpt. We frame a Dataset Construction Pipeline that integrates 7 financial data types and produces a high-quality ERR dataset automatically, which could be used for model training and evaluation. We also introduce a comprehensive evaluation system including 11 metrics to assess the generated ERRs. Moreover, we propose a multi-agent framework specifically tailored to address this task, named FinRpt-Gen, and fine-tune several LLM-based agents on the proposed datasets. Experimental results indicate the data quality and metrics effectiveness of the benchmark FinRpt and the strong performance of FinRpt-Gen, showcasing their potential to drive innovation in the ERR generation field. 
 
-<div align="center">
-<img align="left" src="assets/pipeline.jpg" width="64.08%"/>
-</div>
-
-<div align="center">
-<img align="right" src="assets/agent.jpg" width="35.92%"/>
-</div>
 
 ## 🕹️ Environment Setup
 
@@ -31,6 +24,9 @@ export PYTHONPATH="${PYTHONPATH}:<path_to_this_repo>"
 ## 🔧 Structure
 
 ### Dataset Construction Pipeline
+<div align="center">
+<img align="center" src="assets/pipeline.jpg" width="90%"/>
+</div>
 
 The corresponding code is in
 ```
@@ -45,6 +41,9 @@ FinRpt/finrpt/source
 ```
 
 ### FinRpt Framework
+<div align="center">
+<img align="center" src="assets/agent.jpg" width="35.92%"/>
+</div>
 
 The corresponding code is in
 ```
