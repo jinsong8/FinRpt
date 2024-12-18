@@ -33,7 +33,7 @@ The corresponding code is in
 FinRpt/dataset
 ```
 
-### Data Collect Module
+### Data Collection Module
 
 The corresponding code is in
 ```
