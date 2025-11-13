@@ -91,6 +91,13 @@ The corresponding code is in
 FinRpt/front
 ```
 
+## 🧩 Generated Report Case
+The report case generated using FinRpt-Gen (translated from Chinese into English).
+
+<div align="center">
+<img align="center" src="assets/report.png" width="90%"/>
+</div>
+
 ## 🌹 Acknowledgmentsons
 
 This project use [LLaMA-Factory](https://github.com/hiyouga/LLaMA-Factory) for mdoels fine-tuning, [verl](https://github.com/volcengine/verl) for reinforcement learning, and [ReportLab](https://www.reportlab.com/) for PDF report generation. Special thanks for providing the foundation for this work.
