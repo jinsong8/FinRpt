@@ -5,6 +5,7 @@
   <a href="https://arxiv.org/abs/2511.07322">
     <img src="https://img.shields.io/badge/ArXiv-FinRpt-brown?logo=arxiv" alt="Paper">
   </a>
+  
   <a href="https://huggingface.co/datasets/jinsong8/FinRpt">
     <img src="https://img.shields.io/badge/🤗 huggingface-Dataset-blue" alt="dataset">
   </a>
